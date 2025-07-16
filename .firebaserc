@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "dev-sphere-6692f"
+  },
+  "targets": {
+    "dev-sphere-6692f": {
+      "hosting": {
+        "ecatalog": [
+          "ecatalog-dev-sphere"
+        ],
+        "main": [
+          "dev-sphere-6692f"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

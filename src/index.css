@@ -1,0 +1,270 @@
+@layer tailwind-base, primereact, tailwind-utilities;
+
+/* IMPORTANT: In "styled" mode you must add the PrimeReact Theme here. Do NOT include in "unstyled" mode */
+@import "primereact/resources/themes/lara-light-blue/theme.css"
+  layer(primereact);
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@100..900&display=swap");
+
+@layer tailwind-base {
+  @tailwind base;
+}
+
+@layer tailwind-utilities {
+  @tailwind components;
+  @tailwind utilities;
+}
+
+html {
+  font-size: 14px;
+}
+
+[lang="en"] * {
+  font-family: "Noto Sans Khmer";
+}
+
+[lang="kh"] * {
+  font-family: "Noto Sans Khmer";
+}
+
+[lang="cn"] * {
+  font-family: "Noto Sans Khmer";
+}
+
+.custom-input {
+  input:-webkit-autofill {
+    background-color: transparent !important;
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    -webkit-text-fill-color: white !important; /* ← text color (e.g. Tailwind text-slate-200) */
+    transition: background-color 9999s ease-in-out 0s;
+  }
+
+  .p-icon-field-right > .p-input-icon:last-of-type {
+    right: 1rem;
+    color: white;
+  }
+}
+
+/* PrimeReact */
+.p-tabview .p-tabview-panels {
+  padding: 0px 0px;
+}
+
+.p-divider-content {
+  background: none;
+}
+
+.custom .p-tabview-title {
+  line-height: 1;
+  white-space: wrap !important;
+  text-align: center;
+}
+
+.p-megamenu.p-megamenu-horizontal
+  .p-megamenu-root-list
+  > .p-menuitem
+  > .p-menuitem-content
+  .p-menuitem-link {
+  padding: 0.75rem 0.5rem !important;
+}
+
+.p-icon-field {
+  width: 100%;
+}
+
+.p-icon-field-right > .p-input-icon:last-of-type {
+  top: 1rem;
+}
+
+.p-galleria-indicator-onitem.p-galleria-indicators-bottom
+  .p-galleria-indicators {
+  background: transparent;
+  padding: 0.5rem 1rem;
+}
+
+/* Galleria */
+.p-galleria {
+  /* Force all indicators visible */
+  .p-galleria-indicators {
+    display: flex !important;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  /* Inactive dot */
+  .p-galleria-indicator:not(.p-highlight) > button {
+    background-color: rgba(92, 92, 92, 0.4) !important;
+  }
+
+  /* Active dot */
+  .p-galleria-indicator.p-highlight > button {
+    background-color: #969696 !important;
+  }
+
+  /* Hover effect */
+  .p-galleria-indicator > button:hover {
+    background-color: rgba(226, 226, 226, 0.8) !important;
+  }
+
+  .p-galleria-item-nav {
+    .p-galleria-item-prev-icon.p-icon,
+    .p-galleria-item-next-icon.p-icon {
+      color: rgb(255, 255, 255);
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      width: 3rem;
+      height: 3rem;
+      z-index: 40;
+    }
+
+    .p-galleria-item-prev-icon.p-icon:hover,
+    .p-galleria-item-next-icon.p-icon:hover {
+      background-color: rgba(165, 165, 165, 0.5);
+    }
+  }
+}
+
+.p-colorpicker-preview {
+  cursor: pointer;
+  padding: 1.37rem;
+}
+
+@media screen and (max-width: 1024px) {
+  .p-megamenu-root-list {
+    padding: 0 !important;
+    overflow: hidden !important;
+    height: 100vh !important;
+  }
+
+  .p-galleria .p-galleria-item-nav {
+    .p-galleria-item-prev-icon.p-icon,
+    .p-galleria-item-next-icon.p-icon {
+      font-size: 2.5rem;
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+  }
+}
+
+@media screen and (max-width: 1024px) {
+  .p-megamenu-root-list .p-menuitem-active .p-megamenu-panel {
+    overflow-y: auto !important;
+    height: 100vh;
+  }
+}
+
+@media (min-width: 1280px) {
+  .p-megamenu.p-megamenu-horizontal
+    .p-megamenu-root-list
+    > .p-menuitem
+    > .p-menuitem-content
+    .p-menuitem-link {
+    padding: 0.75rem 0.75rem !important;
+  }
+}
+
+/* Jodit Editor Style*/
+.jodit-editor {
+  h1 {
+    font-size: 2.25rem; /* 36px */
+    line-height: 2.5rem; /* 40px */
+  }
+
+  h2 {
+    font-size: 1.5rem; /* 24px */
+    line-height: 2rem; /* 32px */
+  }
+
+  ul {
+    list-style-type: disc;
+    margin-left: 1.25rem; /* 20px */
+  }
+
+  ol {
+    list-style-type: decimal;
+    margin-left: 1.25rem; /* 20px */
+  }
+
+  ul li,
+  ol li {
+    margin-left: 1.25rem; /* 20px */
+  }
+
+  table,
+  table tbody tr td {
+    border-width: 1px;
+    padding: 0.5rem; /* 8px */
+  }
+
+  table.border-b-2.border-dashed,
+  table.border-b-2.border-dashed tbody tr td {
+    border-width: 0px 0px 2px 0px;
+    border-style: dashed;
+    padding: 1rem 0.5rem; /* 8px */
+  }
+}
+
+/* Style for Tab View HTML from Jodit Editor */
+.tab-container {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  overscroll-behavior: contain auto;
+  position: relative;
+}
+
+.tabs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  white-space: nowrap;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-width: 0 0 2px 0;
+  transition: box-shadow 0.2s;
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.tab {
+  border: solid #e5e7eb;
+  border-width: 0 0 2px 0;
+  border-color: transparent transparent #e5e7eb transparent;
+  background: #ffffff;
+  color: #6b7280;
+  padding: 1.25rem;
+  font-weight: 700;
+  border-top-right-radius: 6px;
+  border-top-left-radius: 6px;
+  transition: box-shadow 0.2s;
+  margin: -2px;
+}
+
+.tab:hover {
+  background: #ffffff;
+  border-color: #7e8696;
+  transition-property: color, background-color, border-color,
+    text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter,
+    backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 500ms;
+}
+
+.tab.active {
+  background: #ffffff;
+  border-color: #3b82f6;
+  color: #3b82f6;
+  transition-property: color, background-color, border-color,
+    text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter,
+    backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 500ms;
+}
+
+.tab-content {
+  display: none;
+  padding: 16px 0px;
+}
+
+.tab-content.active {
+  display: block;
+}

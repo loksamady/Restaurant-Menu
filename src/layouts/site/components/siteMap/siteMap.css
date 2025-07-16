@@ -1,0 +1,7 @@
+.react-flow__handle {
+  opacity: 0;
+}
+
+.react-flow__handle {
+  cursor: default !important; /* Disable cursor change on hover */
+}

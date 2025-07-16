@@ -1,0 +1,16 @@
+{
+  "hero": "hero",
+  "footer": "footer",
+  "description": "Description",
+  "searchForMenus": "Search for menus",
+  "pricing": "Pricing",
+  "usdPrice": "USD Price",
+  "khmerPrice": "Khmer Riel",
+  "code": "Code",
+  "youSave": "You Save",
+  "noItemsIn": "No items in",
+  "categoryEmpty": "This category is currently empty. Check back later for delicious new additions!",
+  "heroTitle": "Delicious Cuisine",
+  "heroSubTitle": "Experience the finest flavors from around the world",
+  "items": "Items"
+}

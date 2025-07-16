@@ -1,0 +1,16 @@
+{
+  "hosting": [
+    {
+      "target": "main",
+      "public": "dist-main",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    },
+    {
+      "target": "ecatalog",
+      "public": "dist-ecatalog",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    }
+  ]
+}
