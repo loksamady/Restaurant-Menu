@@ -1,15 +1,15 @@
 import PageHeader from "@src/components/admin/PageHeader";
 import { Button } from "primereact/button";
 import { useTranslation } from "react-i18next";
-// import { useState } from "react";
+import { useState } from "react";
 import { faAdd, faLayerGroup } from "@fortawesome/free-solid-svg-icons";
-// import CreateDialog from "./components/CreateDialog";
-// import CategoryTable from "./components/CategoryTable";
+import CreateDialog from "./components/CreateDialog";
+import CategoryTable from "./components/CategoryTable";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const CategoryPage = () => {
   const { t } = useTranslation("site");
-  // const [visible, setVisible] = useState<boolean>(false);
+  const [visible, setVisible] = useState<boolean>(false);
 
   const headerActionButtons = () => {
     return (
@@ -32,8 +32,8 @@ const CategoryPage = () => {
         actionContent={headerActionButtons()}
       />
       <div>
-        {/* <CategoryTable />
-        <CreateDialog visible={visible} setVisible={setVisible} /> */}
+        <CategoryTable />
+        <CreateDialog visible={visible} setVisible={setVisible} />
       </div>
     </div>
   );

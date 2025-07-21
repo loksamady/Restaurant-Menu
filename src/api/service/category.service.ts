@@ -19,13 +19,8 @@ export const getAdminCategory = async (id: number) => {
   return data;
 };
 
-export const createCategory = async (
-  createCategory: CreateCategorySchemaType
-) => {
-  const data = securePost<CreateCategorySchemaType>(
-    `${ADMIN_CATEGORY_ENDPOINT}`,
-    createCategory
-  );
+export const createCategory = async (createCategory: CreateCategorySchemaType) => {
+  const data = securePost<CreateCategorySchemaType>(`${ADMIN_CATEGORY_ENDPOINT}`,createCategory);
 
   if (data) toastPromise(data, "Category Image has been created", true);
 
