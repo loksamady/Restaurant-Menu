@@ -29,6 +29,7 @@
     "i18next": "^23.11.5",
     "i18next-browser-languagedetector": "^8.0.0",
     "i18next-http-backend": "^2.5.2",
+    "immer": "^10.1.1",
     "jodit-react": "^4.1.2",
     "lucide-react": "^0.511.0",
     "node-vibrant": "^4.0.3",
@@ -46,7 +47,7 @@
     "sonner": "^1.5.0",
     "swiper": "^11.1.14",
     "zod": "^3.23.8",
-    "zustand": "^4.5.4"
+    "zustand": "^4.5.7"
   },
   "devDependencies": {
     "@types/highcharts": "^7.0.0",

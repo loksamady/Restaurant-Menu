@@ -86,7 +86,6 @@ const HomeMainSection = () => {
       </section>
     );
   };
-
   return (
     <main className="container mx-auto px-4 py-8">
       {categories && categories.length > 0 ? (

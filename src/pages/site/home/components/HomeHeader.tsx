@@ -20,8 +20,8 @@ import SocialMedia from "./SocialMedia";
 import { CategoryType } from "@src/types/website";
 import { getTextColor } from "@src/util/themeColorUtil";
 import { IMAGE_URL } from "@src/constant/env";
-import ShoppingCart from "./ShoppingCart";
-import ShowCart from "./ShowCart";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
 
 type Props = {
   value: string;
@@ -32,14 +32,6 @@ const HomeHeader = ({ value, onSearchChange }: Props) => {
   const { lang } = useUrlLng();
   const { t } = useTranslation("site");
   const { merchant, merchantTheme, categories, menus } = useWebsiteStore();
-
-  // Cart state and type
-  type CartItem = {
-    name: string;
-    qty: number;
-    price: number;
-    image?: string;
-  };
 
   const mappedCategories = () => {
     return categories.filter((category) => {
@@ -197,13 +189,22 @@ const HomeHeader = ({ value, onSearchChange }: Props) => {
           </div>
 
           <div className="items-center space-x-3 justify-end flex">
-            {/* <ShowCart /> */}
-            <ShoppingCart />
             <div className="hidden lg:block justify-end">
               <SocialMedia />
             </div>
 
             <LanguageToggle />
+            {/* <ShowCart /> */}
+            <div className="relative cursor-pointer">
+              <FontAwesomeIcon
+                className="border p-2 rounded-full hover:bg-gray-100 transition-colors"
+                icon={faCartShopping}
+              />
+
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                1
+              </span>
+            </div>
           </div>
         </div>
 
