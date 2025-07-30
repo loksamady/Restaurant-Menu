@@ -20,8 +20,8 @@ import SocialMedia from "./SocialMedia";
 import { CategoryType } from "@src/types/website";
 import { getTextColor } from "@src/util/themeColorUtil";
 import { IMAGE_URL } from "@src/constant/env";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
+import CartIcon from "./CartIcon";
+import { userStore } from "@src/state/store";
 
 type Props = {
   value: string;
@@ -29,6 +29,12 @@ type Props = {
 };
 
 const HomeHeader = ({ value, onSearchChange }: Props) => {
+  const cartMenus = userStore((state) => state.menus);
+  // Calculate total items in cart
+  const totalItemsInCart = cartMenus.reduce(
+    (total, menu) => total + menu.quantity,
+    0
+  );
   const { lang } = useUrlLng();
   const { t } = useTranslation("site");
   const { merchant, merchantTheme, categories, menus } = useWebsiteStore();
@@ -195,16 +201,11 @@ const HomeHeader = ({ value, onSearchChange }: Props) => {
 
             <LanguageToggle />
             {/* <ShowCart /> */}
-            <div className="relative cursor-pointer">
-              <FontAwesomeIcon
-                className="border p-2 rounded-full hover:bg-gray-100 transition-colors"
-                icon={faCartShopping}
-              />
-
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                1
-              </span>
-            </div>
+            <CartIcon
+              className="text-gray-700 hover:text-blue-600 cursor-pointer transition-colors"
+              itemCount={totalItemsInCart}
+              showBadge={true}
+            />
           </div>
         </div>
 

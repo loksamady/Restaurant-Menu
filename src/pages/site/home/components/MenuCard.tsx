@@ -12,6 +12,8 @@ import { Image } from "primereact/image";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { userStore } from "@src/state/store";
+import ChangeQtyButtons from "./ChangeQtyButtons";
+import { Plus } from "lucide-react";
 type Props = {
   menu: MenuType;
 };
@@ -80,7 +82,7 @@ const MenuCard = ({ menu }: Props) => {
     );
   };
   return (
-    <div className="flex flex-col items-center justify-between bg-white gap-4 p-4">
+    <div className="flex flex-col items-start justify-start bg-white gap-4 p-4 ">
       <div className="group relative bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-md hover:shadow-xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden border border-gray-100">
         {/* Product Detail Dialog */}
         <Dialog
@@ -182,87 +184,7 @@ const MenuCard = ({ menu }: Props) => {
                 {cartMenus.find(
                   (menuItem) => menuItem.menu.menuId === menu.menuId
                 ) ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "0.5rem",
-                      alignItems: "center",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                        flex: 1,
-                      }}
-                    >
-                      {/* Decrease button to reduce quantity */}
-                      <button
-                        style={{
-                          width: "35px",
-                          height: "35px",
-                          backgroundColor: "#007bff",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                          fontSize: "1.2rem",
-                          fontWeight: "bold",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        -
-                      </button>
-                      {/* Display the current quantity */}
-                      <span
-                        style={{
-                          fontSize: "1.1rem",
-                          fontWeight: "bold",
-                          minWidth: "20px",
-                          textAlign: "center",
-                        }}
-                      >
-                        1
-                      </span>
-                      {/* Display the quantity in a span */}
-                      <button
-                        style={{
-                          width: "35px",
-                          height: "35px",
-                          backgroundColor: "#007bff",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                          fontSize: "1.2rem",
-                          fontWeight: "bold",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        +
-                      </button>
-                    </div>
-                    {/* Remove button to reset quantity */}
-                    <button
-                      style={{
-                        padding: "0.5rem 0.75rem",
-                        backgroundColor: "#dc3545",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        fontSize: "0.9rem",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </div>
+                  <ChangeQtyButtons menuId={menu.menuId} />
                 ) : (
                   <button
                     onClick={() => {
@@ -402,7 +324,7 @@ const MenuCard = ({ menu }: Props) => {
             <img
               src={filePath ? filePath : `${IMAGE_URL}/${fileName}`}
               alt={menu?.nameEn || "Menu item"}
-              className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110"
+              className="w-full h-64 transition-transform duration-700 group-hover:scale-110"
             />
           ) : (
             <div
@@ -439,92 +361,7 @@ const MenuCard = ({ menu }: Props) => {
           {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </div>
-        {/* Content Section */}
-        <div onClick={() => setVisible(true)} className="p-6 space-y-4">
-          {/* Title */}
-          <p
-            className="font-bold text-xl lg:text-2xl text-gray-800 group-hover:text-[color:var(--hover-color)] transition-colors duration-300"
-            style={
-              {
-                "--hover-color": `#${merchantTheme?.primary}`,
-              } as React.CSSProperties
-            }
-          >
-            {menuName}
-          </p>
-          {/* Pricing Section */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-            <div className="flex flex-col">
-              {/* USD Price */}
-              {menu?.price ? (
-                <div className="flex items-center gap-2">
-                  {hasDiscount ? (
-                    <>
-                      <span
-                        className="text-2xl font-bold"
-                        style={{ color: `#${merchantTheme?.primary}` }}
-                      >
-                        $ {finalPrice.toFixed(2)}
-                      </span>
-                      <span className="text-lg text-gray-400 line-through">
-                        $ {originalPrice.toFixed(2)}
-                      </span>
-                    </>
-                  ) : (
-                    <span
-                      className="text-2xl font-bold"
-                      style={{ color: `#${merchantTheme?.primary}` }}
-                    >
-                      $ {originalPrice.toFixed(2)}
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <span
-                  className="text-2xl font-bold"
-                  style={{ color: `#${merchantTheme?.primary}` }}
-                >
-                  $ 0.00
-                </span>
-              )}
 
-              {/* KH Price */}
-              {menu?.priceKh && (
-                <div className="flex items-center gap-2 mt-1">
-                  {hasDiscount ? (
-                    <>
-                      <span
-                        className="text-xl font-bold"
-                        style={{ color: `#${merchantTheme?.primary}` }}
-                      >
-                        ៛{" "}
-                        {(
-                          menu?.priceKh *
-                          (1 - discountAmount / 100)
-                        ).toLocaleString()}
-                      </span>
-                      <span className="text-gray-400 line-through">
-                        ៛ {menu?.priceKh.toLocaleString()}
-                      </span>
-                    </>
-                  ) : (
-                    <span
-                      className="text-xl font-bold"
-                      style={{ color: `#${merchantTheme?.primary}` }}
-                    >
-                      ៛ {menu?.priceKh.toLocaleString()}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-            {/* add button cart */}
-
-            <div onClick={() => setVisible(true)} className="p-6 space-y-4">
-              <div className="flex items-center justify-center pt-2 border-gray-100"></div>
-            </div>
-          </div>
-        </div>
         {/* Hover Effect Accent */}
         <div
           className="absolute inset-x-0 bottom-0 h-1 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"
@@ -533,109 +370,121 @@ const MenuCard = ({ menu }: Props) => {
           }}
         ></div>
       </div>
-      {/* add button cart */}
-      {cartMenus.find((menuItem) => menuItem.menu.menuId === menu.menuId) ? (
-        <div
-          style={{
-            display: "flex",
-            gap: "0.5rem",
-            alignItems: "center",
-          }}
+      {/* Content Section */}
+      <div
+        // onClick={() => setVisible(true)}
+        className="p-6 justify-start items-center flex-col w-full"
+      >
+        {/* Title */}
+        <p
+          className="font-bold text-xl lg:text-2xl text-gray-800 group-hover:text-[color:var(--hover-color)] transition-colors duration-300"
+          style={
+            {
+              "--hover-color": `#${merchantTheme?.primary}`,
+            } as React.CSSProperties
+          }
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              flex: 1,
-            }}
-          >
-            {/* Decrease button to reduce quantity */}
-            <button
-              style={{
-                width: "35px",
-                height: "35px",
-                backgroundColor: "#007bff",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontSize: "1.2rem",
-                fontWeight: "bold",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              -
-            </button>
-            {/* Display the current quantity */}
-            <span
-              style={{
-                fontSize: "1.1rem",
-                fontWeight: "bold",
-                minWidth: "20px",
-                textAlign: "center",
-              }}
-            >
-              1
-            </span>
-            {/* Display the quantity in a span */}
-            <button
-              style={{
-                width: "35px",
-                height: "35px",
-                backgroundColor: "#007bff",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontSize: "1.2rem",
-                fontWeight: "bold",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              +
-            </button>
+          {menuName}
+        </p>
+        {/* Pricing Section */}
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+          <div className="flex flex-col">
+            {/* USD Price */}
+            {menu?.price ? (
+              <div className="flex items-center gap-2">
+                {hasDiscount ? (
+                  <>
+                    <span
+                      className="text-2xl font-bold"
+                      style={{ color: `#${merchantTheme?.primary}` }}
+                    >
+                      $ {finalPrice.toFixed(2)}
+                    </span>
+                    <span className="text-lg text-gray-400 line-through">
+                      $ {originalPrice.toFixed(2)}
+                    </span>
+                  </>
+                ) : (
+                  <span
+                    className="text-2xl font-bold"
+                    style={{ color: `#${merchantTheme?.primary}` }}
+                  >
+                    $ {originalPrice.toFixed(2)}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span
+                className="text-2xl font-bold"
+                style={{ color: `#${merchantTheme?.primary}` }}
+              >
+                $ 0.00
+              </span>
+            )}
+
+            {/* KH Price */}
+            {menu?.priceKh && (
+              <div className="flex items-center gap-2 mt-1">
+                {hasDiscount ? (
+                  <>
+                    <span
+                      className="text-xl font-bold"
+                      style={{ color: `#${merchantTheme?.primary}` }}
+                    >
+                      ៛{" "}
+                      {(
+                        menu?.priceKh *
+                        (1 - discountAmount / 100)
+                      ).toLocaleString()}
+                    </span>
+                    <span className="text-gray-400 line-through">
+                      ៛ {menu?.priceKh.toLocaleString()}
+                    </span>
+                  </>
+                ) : (
+                  <span
+                    className="text-xl font-bold"
+                    style={{ color: `#${merchantTheme?.primary}` }}
+                  >
+                    ៛ {menu?.priceKh.toLocaleString()}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
-          {/* Remove button to reset quantity */}
-          <button
-            style={{
-              padding: "0.5rem 0.75rem",
-              backgroundColor: "#dc3545",
-              color: "white",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontSize: "0.9rem",
-              fontWeight: "bold",
-            }}
-          >
-            Remove
-          </button>
+          {/* add button cart */}
+
+          <div onClick={() => setVisible(true)} className="p-6 space-y-4">
+            <div className="flex items-center justify-center pt-2 border-gray-100"></div>
+          </div>
+          {/* add button cart */}
+          {cartMenus.find(
+            (menuItem) => menuItem.menu.menuId === menu.menuId
+          ) ? (
+            <ChangeQtyButtons menuId={menu.menuId} />
+          ) : (
+            <button
+              onClick={() => {
+                addMenu(menu, 1);
+                setVisible(false);
+              }}
+              style={{
+                padding: "0.5rem 0.75rem",
+                color: "white",
+                border: "none",
+                backgroundColor: `#${merchantTheme?.primary}`,
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "0.9rem",
+                fontWeight: "bold",
+                marginTop: "0.5rem",
+              }}
+            >
+              <Plus className="inline-block" />
+            </button>
+          )}
         </div>
-      ) : (
-        <button
-          onClick={() => {
-            addMenu(menu, 1);
-            setVisible(false);
-          }}
-          style={{
-            padding: "0.5rem 0.75rem",
-            backgroundColor: "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "0.9rem",
-            fontWeight: "bold",
-          }}
-        >
-          Add to Cart
-        </button>
-      )}
+      </div>
     </div>
   );
 };
