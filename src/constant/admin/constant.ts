@@ -8,6 +8,7 @@ export const USER_ENDPOINT = `${ADMIN_V1}/users`;
 export const MERCHANT_ENDPOINT = `${ADMIN_V1}/merchants`;
 export const VENDOR_ENDPOINT = `${ADMIN_V1}/vendors`;
 
+
 // Screen Width
 export const SCREEN_SM = 640;
 export const SCREEN_MD = 768;

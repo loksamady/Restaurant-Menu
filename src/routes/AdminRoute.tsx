@@ -17,7 +17,7 @@ import CategoryByMerchantPage from "@src/pages/admin/category/[id]/Page";
 import UserByMerchantPage from "@src/pages/admin/user/[id]/Page";
 import MessageInfoCard from "@src/components/MessageInfoCard";
 import UserPage from "@src/pages/admin/user/Page";
-import CustomerPage from "@src/pages/admin/customer/Page";
+// import CustomerPage from "@src/pages/admin/customer/Page";
 
 export const adminRoutes = (): Array<CustomRouteObject> => {
   const authUser = useAuthStore.getState().auth.authUser;
@@ -90,13 +90,13 @@ export const adminRoutes = (): Array<CustomRouteObject> => {
       icon: <FontAwesomeIcon icon={faUserTie} />,
       roles: [ROLE.OWNER],
     },
-    {
-      path: "/admin/users/customers",
-      element: <CustomerPage />,
-      label: "Customers",
-      icon: <FontAwesomeIcon icon={faUserTie} />,
-      roles: [ROLE.OWNER],
-    },
+    // {
+    //   path: "/admin/users/customers",
+    //   element: <CustomerPage />,
+    //   label: "Customers",
+    //   icon: <FontAwesomeIcon icon={faUserTie} />,
+    //   roles: [ROLE.OWNER],
+    // },
     {
       path: "/admin/merchants",
       element: <MerchantPage />,

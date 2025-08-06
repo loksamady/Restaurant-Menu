@@ -19,7 +19,7 @@ const CartIcon: React.FC<CartIconProps> = ({
   onClick,
 }: CartIconProps) => {
   const [visible, setVisible] = useState(false);
-  const [orderVisible, setOrderVisible] = useState(false);
+  const [orderCardVisible, setOrderCardVisible] = useState(false);
   const cartMenus = userStore((state) => state.menus);
   const resetCart = userStore((state) => state.clearCart);
   const removeMenu = userStore((state) => state.removeMenu);
@@ -57,8 +57,7 @@ const CartIcon: React.FC<CartIconProps> = ({
       <Dialog
         header="Shopping Cart"
         visible={visible}
-        style={{ width: "90vw", maxWidth: "600px" }}
-        // breakpoints={{ "960px": "100vw" }}
+        style={{ width: "60vw", maxWidth: "600px" }}
         onHide={() => setVisible(false)}
         footer={
           <div className="flex justify-between items-center">
@@ -74,8 +73,8 @@ const CartIcon: React.FC<CartIconProps> = ({
                 label="Checkout"
                 icon="pi pi-check"
                 onClick={() => {
-                  setVisible(false);
-                  setOrderVisible(true);
+                  setVisible(false); // Close cart dialog
+                  setOrderCardVisible(true); // Open order dialog
                 }}
                 disabled={cartMenus.length === 0}
               />
@@ -310,8 +309,10 @@ const CartIcon: React.FC<CartIconProps> = ({
           )}
         </div>
       </Dialog>
-
-      <OrderCard visible={orderVisible} onHide={() => setOrderVisible(false)} />
+      <OrderCard
+        visible={orderCardVisible}
+        onHide={() => setOrderCardVisible(false)}
+      />
     </>
   );
 };

@@ -4,13 +4,17 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const isHttps = process.env.VITE_HTTPS === "true";
 
   return {
     server: {
-      host: "0.0.0.0", // Allow access from other devices
+      // host: "0.0.0.0", // Allow access from other devices
       port: 3000, // Default Vite port
-      https: isHttps ? {} : false, // Enable HTTPS when VITE_HTTPS=true
+      allowedHosts: [
+        "localhost",
+        "127.0.0.1",
+        "e49d7948947d.ngrok-free.app",
+        ".ngrok-free.app", // Allow any ngrok subdomain
+      ],
     },
     resolve: {
       alias: {

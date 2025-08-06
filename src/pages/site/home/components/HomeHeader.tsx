@@ -22,6 +22,8 @@ import { getTextColor } from "@src/util/themeColorUtil";
 import { IMAGE_URL } from "@src/constant/env";
 import CartIcon from "./CartIcon";
 import { userStore } from "@src/state/store";
+import UserProfile from "@src/components/user/UserProfile";
+import User from "@src/components/user/User";
 
 type Props = {
   value: string;
@@ -30,6 +32,8 @@ type Props = {
 
 const HomeHeader = ({ value, onSearchChange }: Props) => {
   const cartMenus = userStore((state) => state.menus);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+
   // Calculate total items in cart
   const totalItemsInCart = cartMenus.reduce(
     (total, menu) => total + menu.quantity,
@@ -95,7 +99,7 @@ const HomeHeader = ({ value, onSearchChange }: Props) => {
 
     // Cleanup
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [categories]);
+  }, [categories, merchant?.slug]);
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -200,11 +204,16 @@ const HomeHeader = ({ value, onSearchChange }: Props) => {
             </div>
 
             <LanguageToggle />
+            <User onClick={() => setShowUserProfile(true)} />
             {/* <ShowCart /> */}
             <CartIcon
               className="text-gray-700 hover:text-blue-600 cursor-pointer transition-colors"
               itemCount={totalItemsInCart}
               showBadge={true}
+            />
+            <UserProfile
+              visible={showUserProfile}
+              onHide={() => setShowUserProfile(false)}
             />
           </div>
         </div>

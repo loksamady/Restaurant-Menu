@@ -56,6 +56,7 @@ const CreateUserDialog = ({
 
   function onSubmit(data: CreateUserSchemaType) {
     mutate(data);
+    // console.log("Create User Data: ", data);
   }
 
   useEffect(() => {
