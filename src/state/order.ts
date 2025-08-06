@@ -10,6 +10,9 @@ interface OrderStoreType {
   // Actions
   addOrder: (order: Order) => void;
   updateOrderStatus: (orderId: string, status: Order["status"]) => void;
+  cancelOrder: (orderId: string) => void;
+  removeOrder: (orderId: string) => void;
+  removeCancelledOrders: () => void;
   markOrderAsSubmitted: (orderId: string) => void;
   addValidCustomer: (customer: CustomerInfo) => void;
   isValidCustomer: (phone: string, name: string) => boolean;
@@ -36,6 +39,34 @@ export const orderStore = create<OrderStoreType>()(
             if (order) {
               order.status = status;
             }
+          });
+        },
+
+        cancelOrder: (orderId) => {
+          set((state) => {
+            const order = state.orders.find((o) => o.orderId === orderId);
+            if (
+              order &&
+              (order.status === "pending" || order.status === "confirmed")
+            ) {
+              order.status = "cancelled";
+            }
+          });
+        },
+
+        removeOrder: (orderId) => {
+          set((state) => {
+            state.orders = state.orders.filter(
+              (order) => order.orderId !== orderId
+            );
+          });
+        },
+
+        removeCancelledOrders: () => {
+          set((state) => {
+            state.orders = state.orders.filter(
+              (order) => order.status !== "cancelled"
+            );
           });
         },
 

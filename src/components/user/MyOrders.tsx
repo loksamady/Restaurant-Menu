@@ -4,6 +4,7 @@ import { Badge } from "primereact/badge";
 import { Button } from "primereact/button";
 import { DataView } from "primereact/dataview";
 import { Dropdown } from "primereact/dropdown";
+import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { Calendar, Package, DollarSign } from "lucide-react";
 import { IMAGE_URL } from "@src/constant/env";
 import { orderStore } from "@src/state/order";
@@ -52,11 +53,16 @@ const MyOrders: React.FC = () => {
   const markOrderAsSubmitted = orderStore(
     (state) => state.markOrderAsSubmitted
   );
+  const removeOrder = orderStore((state) => state.removeOrder);
+  const removeCancelledOrders = orderStore(
+    (state) => state.removeCancelledOrders
+  );
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [submittingOrderId, setSubmittingOrderId] = useState<string | null>(
     null
   );
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
 
   const statusOptions = [
     { label: "All Orders", value: "all" },
@@ -138,18 +144,99 @@ const MyOrders: React.FC = () => {
     }
   };
 
+  // Function to show delete confirmation
+  const confirmDeleteOrder = (order: Order) => {
+    confirmDialog({
+      message: `Are you sure you want to permanently delete order ${order.orderNumber}? This action cannot be undone and the order will be completely removed from your history.`,
+      header: "Delete Order Confirmation",
+      icon: "pi pi-exclamation-triangle",
+      acceptClassName: "p-button-danger",
+      accept: () => handleDeleteOrder(order),
+      reject: () => {
+        // Do nothing on reject
+      },
+    });
+  };
+
+  // Function to delete order
+  const handleDeleteOrder = async (order: Order) => {
+    if (order.status !== "pending" && order.status !== "confirmed") {
+      toast.error("Only pending or confirmed orders can be deleted");
+      return;
+    }
+
+    setDeletingOrderId(order.orderId);
+
+    try {
+      // Remove order completely from the store
+      removeOrder(order.orderId);
+
+      toast.success(
+        `Order ${order.orderNumber} has been deleted successfully!`
+      );
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      toast.error("Failed to delete order. Please try again.");
+    } finally {
+      setDeletingOrderId(null);
+    }
+  };
+
+  // Function to clear all cancelled orders
+  const handleClearCancelledOrders = () => {
+    const cancelledOrdersCount = orders.filter(
+      (order) => order.status === "cancelled"
+    ).length;
+
+    if (cancelledOrdersCount === 0) {
+      toast.info("No cancelled orders to clear");
+      return;
+    }
+
+    confirmDialog({
+      message: `Are you sure you want to permanently delete all ${cancelledOrdersCount} cancelled orders? This action cannot be undone.`,
+      header: "Clear Cancelled Orders",
+      icon: "pi pi-exclamation-triangle",
+      acceptClassName: "p-button-danger",
+      accept: () => {
+        try {
+          removeCancelledOrders();
+          toast.success(
+            `${cancelledOrdersCount} cancelled orders have been cleared successfully!`
+          );
+        } catch (error) {
+          console.error("Error clearing cancelled orders:", error);
+          toast.error("Failed to clear cancelled orders. Please try again.");
+        }
+      },
+      reject: () => {
+        // Do nothing on reject
+      },
+    });
+  };
+
   const filteredOrders = orders.filter(
     (order) => statusFilter === "all" || order.status === statusFilter
   );
 
   const orderTemplate = (order: Order) => {
+    const isCancelled = order.status === "cancelled";
+
     return (
-      <Card className="mb-4 shadow-sm border border-gray-200">
+      <Card
+        className={`mb-4 shadow-sm border border-gray-200 ${
+          isCancelled ? "opacity-75 bg-red-50 border-red-200" : ""
+        }`}
+      >
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           {/* Order Info */}
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h3 className="text-lg font-semibold text-gray-800">
+              <h3
+                className={`text-lg font-semibold ${
+                  isCancelled ? "text-red-600 line-through" : "text-gray-800"
+                }`}
+              >
                 {order.orderNumber}
               </h3>
               <div className="flex items-center gap-1">
@@ -159,6 +246,11 @@ const MyOrders: React.FC = () => {
                   severity={getStatusSeverity(order.status)}
                 />
               </div>
+              {isCancelled && (
+                <span className="text-red-600 text-sm font-medium bg-red-100 px-2 py-1 rounded">
+                  CANCELLED
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
@@ -237,23 +329,6 @@ const MyOrders: React.FC = () => {
                 </div>
               )}
             </div>
-
-            {/* {order.deliveryAddress && (
-              <div className="flex items-center gap-1 mt-3 text-sm text-gray-600">
-                <MapPin className="w-4 h-4" />
-                <span>{order.deliveryAddress}</span>
-              </div>
-            )} */}
-
-            {/* {order.estimatedDeliveryTime && order.status !== "delivered" && (
-              <div className="flex items-center gap-1 mt-2 text-sm text-gray-600">
-                <Clock className="w-4 h-4" />
-                <span>
-                  Estimated delivery:{" "}
-                  {new Date(order.estimatedDeliveryTime).toLocaleString()}
-                </span>
-              </div>
-            )} */}
           </div>
 
           {/* Actions */}
@@ -284,36 +359,19 @@ const MyOrders: React.FC = () => {
                 <span>Submitted to API</span>
               </div>
             )}
-
-            <Button
-              label="View Details"
-              icon="pi pi-eye"
-              className="p-button-outlined p-button-sm"
-              onClick={() => {
-                // Handle view details
-                console.log("View order details:", order.orderId);
-              }}
-            />
-            {/* {order.status === "delivered" && (
-              <Button
-                label="Reorder"
-                icon="pi pi-refresh"
-                className="p-button-sm"
-                onClick={() => {
-                  // Handle reorder
-                  console.log("Reorder:", order.orderId);
-                }}
-              />
-            )} */}
             {(order.status === "pending" || order.status === "confirmed") && (
               <Button
-                label="Cancel"
-                icon="pi pi-times"
+                label={
+                  deletingOrderId === order.orderId ? "Deleting..." : "Delete"
+                }
+                icon={
+                  deletingOrderId === order.orderId
+                    ? "pi pi-spin pi-spinner"
+                    : "pi pi-trash"
+                }
                 className="p-button-danger p-button-outlined p-button-sm"
-                onClick={() => {
-                  // Handle cancel order
-                  console.log("Cancel order:", order.orderId);
-                }}
+                disabled={deletingOrderId === order.orderId}
+                onClick={() => confirmDeleteOrder(order)}
               />
             )}
           </div>
@@ -328,13 +386,25 @@ const MyOrders: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-800">My Orders</h2>
         <p className="text-gray-600">Track and manage your order history</p>
       </div>
-      <Dropdown
-        value={statusFilter}
-        options={statusOptions}
-        onChange={(e) => setStatusFilter(e.value)}
-        placeholder="Filter by status"
-        className="w-full sm:w-auto"
-      />
+      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <Dropdown
+          value={statusFilter}
+          options={statusOptions}
+          onChange={(e) => setStatusFilter(e.value)}
+          placeholder="Filter by status"
+          className="w-full sm:w-auto"
+        />
+        {/* Clear Cancelled Orders Button */}
+        {orders.some((order) => order.status === "cancelled") && (
+          <Button
+            label="Clear Cancelled"
+            icon="pi pi-trash"
+            className="p-button-danger p-button-outlined p-button-sm"
+            onClick={handleClearCancelledOrders}
+            tooltip="Remove all cancelled orders"
+          />
+        )}
+      </div>
     </div>
   );
 
@@ -342,6 +412,7 @@ const MyOrders: React.FC = () => {
     return (
       <div>
         {header}
+        <ConfirmDialog />
         <div className="text-center py-12">
           <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-600 mb-2">
@@ -354,16 +425,6 @@ const MyOrders: React.FC = () => {
               ? "Start browsing our menu to place your first order!"
               : `You don't have any ${statusFilter} orders.`}
           </p>
-          {statusFilter === "all" && (
-            <Button
-              label="Browse Menu"
-              icon="pi pi-utensils"
-              onClick={() => {
-                // Navigate to menu
-                window.location.href = "/";
-              }}
-            />
-          )}
         </div>
       </div>
     );
@@ -372,6 +433,7 @@ const MyOrders: React.FC = () => {
   return (
     <div>
       {header}
+      <ConfirmDialog />
       <DataView
         value={filteredOrders}
         itemTemplate={orderTemplate}

@@ -39,6 +39,10 @@ const HomeHeader = ({ value, onSearchChange }: Props) => {
     (total, menu) => total + menu.quantity,
     0
   );
+
+  const handleOpenUserProfileWithOrders = () => {
+    setShowUserProfile(true);
+  };
   const { lang } = useUrlLng();
   const { t } = useTranslation("site");
   const { merchant, merchantTheme, categories, menus } = useWebsiteStore();
@@ -210,6 +214,7 @@ const HomeHeader = ({ value, onSearchChange }: Props) => {
               className="text-gray-700 hover:text-blue-600 cursor-pointer transition-colors"
               itemCount={totalItemsInCart}
               showBadge={true}
+              onCheckout={handleOpenUserProfileWithOrders}
             />
             <UserProfile
               visible={showUserProfile}

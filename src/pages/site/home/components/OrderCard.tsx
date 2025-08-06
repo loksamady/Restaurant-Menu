@@ -18,10 +18,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ visible, onHide }) => {
       draggable={false}
       resizable={false}
     >
-      <OrderForm 
-        onSubmitSuccess={onHide}
-        onCancel={onHide}
-      />
+      <OrderForm onSubmitSuccess={onHide} onCancel={onHide} />
     </Dialog>
   );
 };

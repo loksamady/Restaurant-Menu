@@ -1,5 +1,5 @@
 import { Toaster } from "sonner";
-import { Route, RouterProvider, createBrowserRouter } from "react-router-dom";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { useRoute } from "./hooks/useRoute";
 import Loading from "./components/Loading";
 
@@ -11,8 +11,7 @@ function App() {
 
   return (
     <div>
-      <RouterProvider router={browserRouter}>
-      </RouterProvider>
+      <RouterProvider router={browserRouter}></RouterProvider>
       <Toaster position="top-right" expand={true} richColors closeButton />
     </div>
   );

@@ -5,28 +5,71 @@ import { Dialog } from "primereact/dialog";
 import ChangeQtyButtons from "./ChangeQtyButtons";
 import { Button } from "primereact/button";
 import { IMAGE_URL } from "@src/constant/env";
-import OrderCard from "./OrderCard";
+import { orderStore } from "@src/state/order";
+import { createOrderFromCart } from "@src/util/orderUtil";
+import { toast } from "sonner";
 interface CartIconProps {
   className?: string;
   itemCount?: number;
   showBadge?: boolean;
   onClick?: () => void;
+  onCheckout?: () => void;
 }
 const CartIcon: React.FC<CartIconProps> = ({
   className = "",
   itemCount = 0,
   showBadge = false,
   onClick,
+  onCheckout,
 }: CartIconProps) => {
   const [visible, setVisible] = useState(false);
-  const [orderCardVisible, setOrderCardVisible] = useState(false);
   const cartMenus = userStore((state) => state.menus);
   const resetCart = userStore((state) => state.clearCart);
   const removeMenu = userStore((state) => state.removeMenu);
+  const addOrder = orderStore((state) => state.addOrder);
 
   const handleResetCart = () => {
     resetCart();
     setVisible(false);
+  };
+
+  const handleCheckout = () => {
+    if (cartMenus.length === 0) {
+      toast.error("Your cart is empty!");
+      return;
+    }
+
+    try {
+      // Create order from cart data
+      const newOrder = createOrderFromCart(cartMenus);
+
+      // Add order to store
+      addOrder(newOrder);
+
+      // Clear the cart
+      resetCart();
+
+      // Close cart dialog
+      setVisible(false);
+
+      // Show success message
+      const totalItems = cartMenus.reduce(
+        (total, menu) => total + menu.quantity,
+        0
+      );
+      toast.success(
+        `Order ${newOrder.orderNumber} created successfully! 
+        ${totalItems} items • $${newOrder.totalAmount.toFixed(2)}`
+      );
+
+      // Call the onCheckout callback to open MyOrders
+      if (onCheckout) {
+        onCheckout();
+      }
+    } catch (error) {
+      console.error("Error creating order:", error);
+      toast.error("Failed to create order. Please try again.");
+    }
   };
 
   const calculateTotal = () => {
@@ -72,10 +115,7 @@ const CartIcon: React.FC<CartIconProps> = ({
               <Button
                 label="Checkout"
                 icon="pi pi-check"
-                onClick={() => {
-                  setVisible(false); // Close cart dialog
-                  setOrderCardVisible(true); // Open order dialog
-                }}
+                onClick={handleCheckout}
                 disabled={cartMenus.length === 0}
               />
             </div>
@@ -309,10 +349,6 @@ const CartIcon: React.FC<CartIconProps> = ({
           )}
         </div>
       </Dialog>
-      <OrderCard
-        visible={orderCardVisible}
-        onHide={() => setOrderCardVisible(false)}
-      />
     </>
   );
 };
