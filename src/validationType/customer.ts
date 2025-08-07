@@ -34,7 +34,7 @@ export const CustomerLoginSchema = z.object({
 });
 
 // Update Customer Profile Schema
-export const UpdateCustomerProfileSchema = z.object({
+export const CreateCustomerSchema = z.object({
   firstName: z
     .string()
     .min(2, "First name must be at least 2 characters")
@@ -279,9 +279,7 @@ export const EmailVerificationSchema = z.object({
 // Export schema types
 export type CustomerRegisterSchemaType = z.infer<typeof CustomerRegisterSchema>;
 export type CustomerLoginSchemaType = z.infer<typeof CustomerLoginSchema>;
-export type UpdateCustomerProfileSchemaType = z.infer<
-  typeof UpdateCustomerProfileSchema
->;
+export type CreateCustomerSchemaType = z.infer<typeof CreateCustomerSchema>;
 export type ChangePasswordSchemaType = z.infer<typeof ChangePasswordSchema>;
 export type ForgotPasswordSchemaType = z.infer<typeof ForgotPasswordSchema>;
 export type ResetPasswordSchemaType = z.infer<typeof ResetPasswordSchema>;

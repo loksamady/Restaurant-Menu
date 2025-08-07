@@ -11,5 +11,3 @@ export const CHINESE = "cn";
 export const EMPTY = "N/A";
 
 export const CUSTOMER_ENDPOINT = `${WEBSITE_V1}/customers`;
-export const CART_ENDPOINT = `${CUSTOMER_ENDPOINT}/cart-menu`;
-export const ORDER_ENDPOINT = `${CUSTOMER_ENDPOINT}/orders`;

@@ -8,6 +8,8 @@ import { IMAGE_URL } from "@src/constant/env";
 import { orderStore } from "@src/state/order";
 import { createOrderFromCart } from "@src/util/orderUtil";
 import { toast } from "sonner";
+import CheckoutForm from "./forms/CheckoutForm";
+import MyOrders from "./MyOrders";
 interface CartIconProps {
   className?: string;
   itemCount?: number;
@@ -23,6 +25,9 @@ const CartIcon: React.FC<CartIconProps> = ({
   onCheckout,
 }: CartIconProps) => {
   const [visible, setVisible] = useState(false);
+  const [showCheckoutForm, setShowCheckoutForm] = useState(false);
+  const [showMyOrders, setShowMyOrders] = useState(false);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const cartMenus = userStore((state) => state.menus);
   const resetCart = userStore((state) => state.clearCart);
   const removeMenu = userStore((state) => state.removeMenu);
@@ -31,6 +36,7 @@ const CartIcon: React.FC<CartIconProps> = ({
   const handleResetCart = () => {
     resetCart();
     setVisible(false);
+    toast.success("Cart cleared!");
   };
 
   const handleCheckout = () => {
@@ -39,9 +45,98 @@ const CartIcon: React.FC<CartIconProps> = ({
       return;
     }
 
+    // Show checkout form instead of immediately creating order
+    setShowCheckoutForm(true);
+  };
+
+  const handleCheckoutSubmit = async (checkoutData: {
+    phone_number: string;
+    address: string;
+    telegram_id: string;
+    telegram_username: string;
+  }) => {
+    setIsSubmittingOrder(true);
+
     try {
-      // Create order from cart data
-      const newOrder = createOrderFromCart(cartMenus);
+      // Import user service functions
+      const {
+        isFirstOrder,
+        createUserProfileFromFirstOrder,
+        updateUserOrderStatistics,
+        createOrUpdateUserFromCheckout,
+      } = await import("../../../../services/userService");
+
+      // Calculate order statistics first
+      const orderTotal = calculateTotal();
+      const savings = cartMenus.reduce((acc, cartMenu) => {
+        const menuPrice = cartMenu.menu.price || 0;
+        const discount = cartMenu.menu.discount || 0;
+        const discountAmount = (menuPrice * discount) / 100;
+        return acc + discountAmount * cartMenu.quantity;
+      }, 0);
+
+      // Check if this is user's first order
+      const isFirstUserOrder = isFirstOrder();
+      let updatedUser;
+
+      if (isFirstUserOrder) {
+        // Create user profile from first order
+        updatedUser = createUserProfileFromFirstOrder(
+          {
+            phone: checkoutData.phone_number,
+            address: checkoutData.address,
+            telegram_id: checkoutData.telegram_id,
+            telegram_username: checkoutData.telegram_username,
+          },
+          orderTotal,
+          savings
+        );
+      } else {
+        // Get current Telegram user data from WebApp for existing users
+        const telegramWebApp = (
+          window as unknown as {
+            Telegram?: {
+              WebApp?: {
+                initDataUnsafe?: {
+                  user?: {
+                    id?: number;
+                    first_name?: string;
+                    last_name?: string;
+                    username?: string;
+                    photo_url?: string;
+                    language_code?: string;
+                    is_premium?: boolean;
+                  };
+                };
+              };
+            };
+          }
+        ).Telegram?.WebApp;
+        const telegramUser = telegramWebApp?.initDataUnsafe?.user;
+
+        // Update existing user data from checkout form
+        updatedUser = createOrUpdateUserFromCheckout(
+          checkoutData,
+          telegramUser
+        );
+
+        // Update user statistics for existing users
+        updateUserOrderStatistics(orderTotal, savings);
+      }
+
+      // Create order from cart data with enhanced customer info
+      const newOrder = createOrderFromCart(cartMenus, {
+        name:
+          `${updatedUser.firstName} ${updatedUser.lastName}`.trim() ||
+          checkoutData.telegram_username,
+        phone: checkoutData.phone_number,
+        address: checkoutData.address,
+        email:
+          updatedUser.email ||
+          `${checkoutData.telegram_username}@telegram.user`,
+        notes: `Telegram ID: ${checkoutData.telegram_id}, Username: @${checkoutData.telegram_username}`,
+        paymentMethod: "cash" as const,
+      });
 
       // Add order to store
       addOrder(newOrder);
@@ -49,26 +144,42 @@ const CartIcon: React.FC<CartIconProps> = ({
       // Clear the cart
       resetCart();
 
-      // Close cart dialog
+      // Close dialogs
       setVisible(false);
+      setShowCheckoutForm(false);
 
       // Show success message
       const totalItems = cartMenus.reduce(
         (total, menu) => total + menu.quantity,
         0
       );
-      toast.success(
-        `Order ${newOrder.orderNumber} created successfully! 
-        ${totalItems} items • $${newOrder.totalAmount.toFixed(2)}`
-      );
 
-      // Call the onCheckout callback to open MyOrders
+      if (isFirstUserOrder) {
+        toast.success(
+          `🎉 Welcome! Your first order ${
+            newOrder.orderNumber
+          } created successfully! 
+          ${totalItems} items • $${newOrder.totalAmount.toFixed(2)}`
+        );
+      } else {
+        toast.success(
+          `Order ${newOrder.orderNumber} created successfully! 
+          ${totalItems} items • $${newOrder.totalAmount.toFixed(2)}`
+        );
+      }
+
+      // Show MyOrders after successful checkout
+      setShowMyOrders(true);
+
+      // Call the onCheckout callback
       if (onCheckout) {
         onCheckout();
       }
     } catch (error) {
       console.error("Error creating order:", error);
       toast.error("Failed to create order. Please try again.");
+    } finally {
+      setIsSubmittingOrder(false);
     }
   };
 
@@ -90,9 +201,9 @@ const CartIcon: React.FC<CartIconProps> = ({
           if (onClick) onClick();
         }}
       >
-        <ShoppingBasket />
+        <ShoppingBasket className="w-5 h-5 sm:w-6 sm:h-6" />
         {showBadge && itemCount > 0 && (
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center min-w-[20px]">
+          <span className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center min-w-[16px] sm:min-w-[20px]">
             {itemCount > 99 ? "99+" : itemCount}
           </span>
         )}
@@ -100,31 +211,46 @@ const CartIcon: React.FC<CartIconProps> = ({
       <Dialog
         header="Shopping Cart"
         visible={visible}
-        style={{ width: "60vw", maxWidth: "600px" }}
+        style={{
+          width: "95vw",
+          maxWidth: "600px",
+          minWidth: "320px",
+        }}
         onHide={() => setVisible(false)}
+        className="cart-dialog"
+        contentStyle={{
+          padding: "0",
+          maxHeight: "70vh",
+          overflow: "hidden",
+        }}
+        headerStyle={{
+          padding: "1rem",
+          fontSize: "1.1rem",
+        }}
         footer={
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 px-2">
             <Button
               label="Reset Cart"
               icon="pi pi-trash"
               onClick={handleResetCart}
-              className="p-button-danger p-button-outlined"
+              className="p-button-danger p-button-outlined w-full sm:w-auto text-xs sm:text-sm"
               disabled={cartMenus.length === 0}
             />
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               <Button
                 label="Checkout"
                 icon="pi pi-check"
                 onClick={handleCheckout}
                 disabled={cartMenus.length === 0}
+                className="w-full sm:w-auto text-xs sm:text-sm"
               />
             </div>
           </div>
         }
       >
-        <div className="m-0">
+        <div className="m-0 p-2 sm:p-4 max-h-full overflow-hidden flex flex-col">
           {cartMenus.length > 0 ? (
-            <div>
+            <div className="flex flex-col h-full">
               <div className="mb-4">
                 {(() => {
                   const totalOriginal = cartMenus.reduce((total, cartMenu) => {
@@ -137,13 +263,13 @@ const CartIcon: React.FC<CartIconProps> = ({
                   const hasAnySavings = totalSavings > 0;
 
                   return (
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-lg font-semibold">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 gap-2">
+                      <h3 className="text-base sm:text-lg font-semibold">
                         Cart Items ({cartMenus.length})
                       </h3>
                       {hasAnySavings && (
                         <div className="flex items-center gap-2">
-                          <div className="bg-gradient-to-r from-green-400 to-green-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
+                          <div className="bg-gradient-to-r from-green-400 to-green-600 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
                             💸 ${totalSavings.toFixed(2)} SAVED
                           </div>
                         </div>
@@ -151,7 +277,10 @@ const CartIcon: React.FC<CartIconProps> = ({
                     </div>
                   );
                 })()}
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div
+                  className="space-y-2 sm:space-y-3 max-h-48 sm:max-h-60 overflow-y-auto overscroll-contain"
+                  style={{ scrollbarWidth: "thin" }}
+                >
                   {cartMenus.map((cartMenu) => {
                     const menu = cartMenu.menu;
                     const hasFiles =
@@ -174,9 +303,9 @@ const CartIcon: React.FC<CartIconProps> = ({
                     return (
                       <div
                         key={menu.menuId}
-                        className="flex items-center justify-between p-3 border rounded-lg bg-gray-50"
+                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-2 sm:p-3 border rounded-lg bg-gray-50 gap-3"
                       >
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                           <img
                             src={
                               filePath
@@ -186,36 +315,36 @@ const CartIcon: React.FC<CartIconProps> = ({
                                 : "/placeholder-food.jpg"
                             }
                             alt={menu.nameEn || "Menu item"}
-                            className="w-12 h-12 object-cover rounded"
+                            className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded flex-shrink-0"
                           />
-                          <div className="flex flex-col">
-                            <h4 className="font-medium text-sm">
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <h4 className="font-medium text-xs sm:text-sm truncate">
                               {menu.nameEn}
                             </h4>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 hidden sm:block">
                               Code: {menu.code}
                             </p>
-                            <div className="flex items-center gap-2 mt-1">
+                            <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
                               {hasDiscount ? (
                                 <>
-                                  <span className="text-sm font-semibold text-green-600">
+                                  <span className="text-xs sm:text-sm font-semibold text-green-600">
                                     ${finalPrice.toFixed(2)}
                                   </span>
                                   <span className="text-xs text-gray-400 line-through">
                                     ${originalPrice.toFixed(2)}
                                   </span>
-                                  <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-medium">
+                                  <span className="text-xs bg-red-100 text-red-600 px-1 py-0.5 rounded-full font-medium">
                                     -{discountAmount}% OFF
                                   </span>
                                 </>
                               ) : (
-                                <span className="text-sm font-semibold">
+                                <span className="text-xs sm:text-sm font-semibold">
                                   ${originalPrice.toFixed(2)}
                                 </span>
                               )}
                             </div>
                             {hasDiscount && (
-                              <div className="text-xs text-green-600 font-medium mt-0.5">
+                              <div className="text-xs text-green-600 font-medium mt-0.5 hidden sm:block">
                                 Save $
                                 {(
                                   (originalPrice - finalPrice) *
@@ -227,7 +356,7 @@ const CartIcon: React.FC<CartIconProps> = ({
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
                           <ChangeQtyButtons menuId={menu.menuId} />
                           <Button
                             icon="pi pi-trash"
@@ -240,7 +369,7 @@ const CartIcon: React.FC<CartIconProps> = ({
                     );
                   })}
                 </div>
-                <div className="mt-4 pt-3 border-t">
+                <div className="mt-3 sm:mt-4 pt-3 border-t flex-shrink-0">
                   {(() => {
                     const totalOriginal = cartMenus.reduce(
                       (total, cartMenu) => {
@@ -261,7 +390,7 @@ const CartIcon: React.FC<CartIconProps> = ({
                     return (
                       <>
                         {/* Subtotal (Original Prices) */}
-                        <div className="flex justify-between items-center mb-2 text-sm">
+                        <div className="flex justify-between items-center mb-2 text-xs sm:text-sm">
                           <span className="text-gray-600">
                             Subtotal ({cartMenus.length} items):
                           </span>
@@ -279,7 +408,7 @@ const CartIcon: React.FC<CartIconProps> = ({
                         {/* Discount Information */}
                         {hasAnySavings && (
                           <>
-                            <div className="flex justify-between items-center mb-1 text-sm">
+                            <div className="flex justify-between items-center mb-1 text-xs sm:text-sm">
                               <span className="text-orange-600 flex items-center gap-1">
                                 🏷️ Discount Applied:
                               </span>
@@ -287,11 +416,11 @@ const CartIcon: React.FC<CartIconProps> = ({
                                 -{savingsPercentage.toFixed(1)}%
                               </span>
                             </div>
-                            <div className="flex justify-between items-center mb-3 text-sm">
+                            <div className="flex justify-between items-center mb-3 text-xs sm:text-sm">
                               <span className="text-green-600 font-medium flex items-center gap-1">
                                 💰 You Save:
                               </span>
-                              <span className="text-green-600 font-bold text-base">
+                              <span className="text-green-600 font-bold text-sm sm:text-base">
                                 -${totalSavings.toFixed(2)}
                               </span>
                             </div>
@@ -301,11 +430,11 @@ const CartIcon: React.FC<CartIconProps> = ({
                         {/* Final Total */}
                         <div className="border-t pt-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-lg font-bold text-gray-800">
+                            <span className="text-base sm:text-lg font-bold text-gray-800">
                               Final Total:
                             </span>
                             <div className="text-right">
-                              <span className="text-2xl font-bold text-green-600">
+                              <span className="text-lg sm:text-2xl font-bold text-green-600">
                                 ${totalDiscounted.toFixed(2)}
                               </span>
                               {hasAnySavings && (
@@ -320,7 +449,7 @@ const CartIcon: React.FC<CartIconProps> = ({
                         {/* Additional Savings Message */}
                         {hasAnySavings && (
                           <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-                            <div className="text-center text-sm text-green-700">
+                            <div className="text-center text-xs sm:text-sm text-green-700">
                               🎉 <strong>Congratulations!</strong> You're saving{" "}
                               <span className="font-bold">
                                 ${totalSavings.toFixed(2)}
@@ -336,19 +465,52 @@ const CartIcon: React.FC<CartIconProps> = ({
               </div>
             </div>
           ) : (
-            <div className="text-center py-4">
+            <div className="text-center py-6 sm:py-8">
               <ShoppingBasket
-                size={48}
-                className="mx-auto mb-3 text-gray-400"
+                size={40}
+                className="mx-auto mb-3 text-gray-400 sm:w-12 sm:h-12"
               />
-              <p className="text-gray-600">Your cart is empty</p>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-gray-600 text-sm sm:text-base">
+                Your cart is empty
+              </p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-2">
                 Add some products to get started!
               </p>
             </div>
           )}
         </div>
       </Dialog>
+
+      {/* Checkout Form Dialog */}
+      <Dialog
+        header="Checkout"
+        visible={showCheckoutForm}
+        style={{
+          width: "95vw",
+          maxWidth: "500px",
+          minWidth: "320px",
+        }}
+        onHide={() => setShowCheckoutForm(false)}
+        closable={!isSubmittingOrder}
+        className="checkout-dialog"
+        contentStyle={{
+          padding: "1rem",
+          maxHeight: "70vh",
+          overflow: "auto",
+        }}
+        headerStyle={{
+          padding: "1rem",
+          fontSize: "1.1rem",
+        }}
+      >
+        <CheckoutForm
+          onSubmit={handleCheckoutSubmit}
+          isLoading={isSubmittingOrder}
+        />
+      </Dialog>
+
+      {/* My Orders Dialog */}
+      <MyOrders visible={showMyOrders} onHide={() => setShowMyOrders(false)} />
     </>
   );
 };

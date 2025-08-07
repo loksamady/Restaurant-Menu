@@ -5,7 +5,6 @@ import { CHINESE, KHMER } from "@src/constant/site/constant";
 import { useWebsiteStore } from "@src/state/website";
 import { CategoryType, MenuType } from "@src/types/website";
 import { staticCategories } from "@src/static/menu";
-import ListUser from "./ListUser";
 
 const HomeMainSection = () => {
   const { lang } = useUrlLng();
@@ -109,7 +108,6 @@ const HomeMainSection = () => {
           )}
         </div>
       )}
-      <ListUser />
     </main>
   );
 };

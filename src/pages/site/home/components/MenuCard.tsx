@@ -389,9 +389,9 @@ const MenuCard = ({ menu }: Props) => {
           )}
 
           {/* Favorite Icon */}
-          <div className="absolute top-4 right-16 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer hover:bg-white/30">
+          {/* <div className="absolute top-4 right-16 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer hover:bg-white/30">
             <i className="pi pi-heart text-white text-lg"></i>
-          </div>
+          </div> */}
         </div>
 
         {/* Card Content */}

@@ -4,6 +4,7 @@ import { Badge } from "primereact/badge";
 import { Button } from "primereact/button";
 import { DataView } from "primereact/dataview";
 import { Dropdown } from "primereact/dropdown";
+import { Dialog } from "primereact/dialog";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { Calendar, Package, DollarSign } from "lucide-react";
 import { IMAGE_URL } from "@src/constant/env";
@@ -11,6 +12,11 @@ import { orderStore } from "@src/state/order";
 import { createOrder } from "@src/api/service/site/customer.service";
 import { toast } from "sonner";
 import { CreateOrderType } from "@src/types/customer";
+
+interface MyOrdersProps {
+  visible?: boolean;
+  onHide?: () => void;
+}
 
 interface Order {
   orderId: string;
@@ -48,7 +54,7 @@ interface Order {
   estimatedDeliveryTime?: string;
 }
 
-const MyOrders: React.FC = () => {
+const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
   const orders = orderStore((state) => state.orders);
   const markOrderAsSubmitted = orderStore(
     (state) => state.markOrderAsSubmitted
@@ -168,15 +174,27 @@ const MyOrders: React.FC = () => {
     setDeletingOrderId(order.orderId);
 
     try {
+      // Import user service function
+      const { decreaseUserOrderCount } = await import(
+        "../../services/userService"
+      );
+
       // Remove order completely from the store
       removeOrder(order.orderId);
 
+      // Decrease user order statistics
+      const orderAmount = order.totalAmount || 0;
+      const savings = order.totalSavings || 0;
+      decreaseUserOrderCount(orderAmount, savings);
+
       toast.success(
-        `Order ${order.orderNumber} has been deleted successfully!`
+        `Order ${order.orderNumber} has been deleted and statistics updated!`
       );
     } catch (error) {
       console.error("Error deleting order:", error);
-      toast.error("Failed to delete order. Please try again.");
+      // Still remove order even if user statistics update fails
+      removeOrder(order.orderId);
+      toast.success(`Order ${order.orderNumber} has been deleted!`);
     } finally {
       setDeletingOrderId(null);
     }
@@ -430,6 +448,35 @@ const MyOrders: React.FC = () => {
     );
   }
 
+  // If used as a dialog (visible prop provided), wrap in Dialog
+  if (visible !== undefined) {
+    return (
+      <Dialog
+        header="My Orders"
+        visible={visible}
+        style={{ width: "95vw", maxWidth: "1200px", height: "90vh" }}
+        onHide={onHide || (() => {})}
+        dismissableMask
+        draggable={false}
+        resizable={false}
+        className="my-orders-dialog"
+      >
+        <div>
+          {header}
+          <ConfirmDialog />
+          <DataView
+            value={filteredOrders}
+            itemTemplate={orderTemplate}
+            paginator
+            rows={5}
+            emptyMessage="No orders found"
+          />
+        </div>
+      </Dialog>
+    );
+  }
+
+  // Default return for standalone usage
   return (
     <div>
       {header}
