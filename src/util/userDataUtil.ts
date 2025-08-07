@@ -1,9 +1,10 @@
 // Utility to manage user data for the application
 import {
-  initializeSampleUser,
   getUserData,
   createUserFromPhone,
   createUserFromForm,
+  getDefaultUserData,
+  saveUserData,
 } from "../services/userService";
 
 // Initialize user data when the app loads
@@ -43,5 +44,6 @@ export const setupUserFromForm = (formData: {
 
 // For demo/testing - creates a sample user
 export const setupSampleUser = () => {
-  return initializeSampleUser();
+  const sampleUser = getDefaultUserData();
+  return saveUserData(sampleUser);
 };

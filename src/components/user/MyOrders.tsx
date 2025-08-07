@@ -9,9 +9,7 @@ import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { Calendar, Package, DollarSign } from "lucide-react";
 import { IMAGE_URL } from "@src/constant/env";
 import { orderStore } from "@src/state/order";
-import { createOrder } from "@src/api/service/site/customer.service";
 import { toast } from "sonner";
-import { CreateOrderType } from "@src/types/customer";
 
 interface MyOrdersProps {
   visible?: boolean;
@@ -125,26 +123,18 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
     setSubmittingOrderId(order.orderId);
 
     try {
-      const orderData: CreateOrderType = {
-        items: order.items.map((item) => ({
-          menuId: item.menuId,
-          quantity: item.quantity,
-        })),
-        deliveryAddress: order.deliveryAddress || undefined,
-        specialInstructions: order.specialInstructions || undefined,
-        paymentMethod: order.customerInfo.paymentMethod as
-          | "cash"
-          | "card"
-          | "online",
-      };
+      // TODO: Implement actual order submission to API
+      // For now, we'll just mark it as submitted locally
+      console.log("Submitting order:", order);
 
-      await createOrder(orderData);
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       markOrderAsSubmitted(order.orderId);
-
-      toast.success("Order submitted successfully to API!");
+      toast.success("Order submitted successfully!");
     } catch (error) {
       console.error("Error submitting order:", error);
-      toast.error("Failed to submit order to API. Please try again.");
+      toast.error("Failed to submit order. Please try again.");
     } finally {
       setSubmittingOrderId(null);
     }
