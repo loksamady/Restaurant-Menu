@@ -38,16 +38,22 @@ export const CreateCustomerSchema = z.object({
   username: z
     .string()
     .min(2, "Username must be at least 2 characters")
-    .max(50, "Username must be less than 50 characters")
-    .optional(),
+    .max(50, "Username must be less than 50 characters"),
   phone_number: z
     .string()
     .min(1, "Phone number is required")
-    .regex(/^\+?[\d\s\-()]+$/, "Please enter a valid phone number"),
+    .min(5, "Phone number must be at least 5 characters")
+    .regex(/^\+?[\d\s\-()]+$/, "Please enter a valid phone number")
+    .refine((val) => val.trim().length >= 5, {
+      message: "Phone number cannot be empty or just whitespace",
+    }),
   address: z
     .string()
     .min(1, "Address is required")
-    .max(200, "Address must be less than 200 characters"),
+    .max(200, "Address must be less than 200 characters")
+    .refine((val) => val.trim().length >= 1, {
+      message: "Address cannot be empty or just whitespace",
+    }),
   telegram_id: z
     .string()
     .min(1, "Telegram ID is required")

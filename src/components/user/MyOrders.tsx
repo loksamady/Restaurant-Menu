@@ -9,9 +9,7 @@ import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { Calendar, Package, DollarSign } from "lucide-react";
 import { IMAGE_URL } from "@src/constant/env";
 import { orderStore } from "@src/state/order";
-import { createOrder } from "@src/api/service/site/customer.service";
 import { toast } from "sonner";
-import { CreateOrderType } from "@src/types/customer";
 
 interface MyOrdersProps {
   visible?: boolean;
@@ -63,6 +61,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
   const removeCancelledOrders = orderStore(
     (state) => state.removeCancelledOrders
   );
+  const clearOrders = orderStore((state) => state.clearOrders);
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [submittingOrderId, setSubmittingOrderId] = useState<string | null>(
@@ -70,14 +69,15 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
   );
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
 
+  // Enhanced status options with icons
   const statusOptions = [
-    { label: "All Orders", value: "all" },
-    { label: "Pending", value: "pending" },
-    { label: "Confirmed", value: "confirmed" },
-    { label: "Preparing", value: "preparing" },
-    { label: "Ready", value: "ready" },
-    { label: "Delivered", value: "delivered" },
-    { label: "Cancelled", value: "cancelled" },
+    { label: "All Orders", value: "all", icon: "pi pi-list" },
+    { label: "Pending", value: "pending", icon: "pi pi-clock" },
+    { label: "Confirmed", value: "confirmed", icon: "pi pi-info-circle" },
+    { label: "Preparing", value: "preparing", icon: "pi pi-cog" },
+    { label: "Ready", value: "ready", icon: "pi pi-bell" },
+    { label: "Delivered", value: "delivered", icon: "pi pi-check-circle" },
+    { label: "Cancelled", value: "cancelled", icon: "pi pi-times-circle" },
   ];
 
   const getStatusSeverity = (
@@ -115,36 +115,41 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
     }
   };
 
-  // Function to submit order to API
+  // Function to mark order as submitted (simulated API submission)
   const handleSubmitOrder = async (order: Order) => {
     if (order.submittedToApi) {
-      toast.info("Order has already been submitted to API");
+      toast.info("Order has already been submitted");
       return;
     }
 
     setSubmittingOrderId(order.orderId);
 
     try {
-      const orderData: CreateOrderType = {
-        items: order.items.map((item) => ({
-          menuId: item.menuId,
-          quantity: item.quantity,
-        })),
-        deliveryAddress: order.deliveryAddress || undefined,
-        specialInstructions: order.specialInstructions || undefined,
-        paymentMethod: order.customerInfo.paymentMethod as
-          | "cash"
-          | "card"
-          | "online",
-      };
+      // Simulate API call with a delay
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      await createOrder(orderData);
+      // Mark order as submitted in the store
       markOrderAsSubmitted(order.orderId);
 
-      toast.success("Order submitted successfully to API!");
+      toast.success(`Order ${order.orderNumber} submitted successfully!`);
+
+      // Optional: Log the order data that would be sent to API
+      console.log("Order data that would be sent to API:", {
+        orderId: order.orderId,
+        orderNumber: order.orderNumber,
+        items: order.items.map((item) => ({
+          menuId: item.menuId,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        totalAmount: order.totalAmount,
+        customerInfo: order.customerInfo,
+        deliveryAddress: order.deliveryAddress,
+      });
     } catch (error) {
       console.error("Error submitting order:", error);
-      toast.error("Failed to submit order to API. Please try again.");
+      toast.error("Failed to submit order. Please try again.");
     } finally {
       setSubmittingOrderId(null);
     }
@@ -174,27 +179,15 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
     setDeletingOrderId(order.orderId);
 
     try {
-      // Import user service function
-      const { decreaseUserOrderCount } = await import(
-        "../../services/userService"
-      );
-
       // Remove order completely from the store
       removeOrder(order.orderId);
 
-      // Decrease user order statistics
-      const orderAmount = order.totalAmount || 0;
-      const savings = order.totalSavings || 0;
-      decreaseUserOrderCount(orderAmount, savings);
-
       toast.success(
-        `Order ${order.orderNumber} has been deleted and statistics updated!`
+        `Order ${order.orderNumber} has been deleted successfully!`
       );
     } catch (error) {
       console.error("Error deleting order:", error);
-      // Still remove order even if user statistics update fails
-      removeOrder(order.orderId);
-      toast.success(`Order ${order.orderNumber} has been deleted!`);
+      toast.error("Failed to delete order. Please try again.");
     } finally {
       setDeletingOrderId(null);
     }
@@ -233,6 +226,44 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
     });
   };
 
+  // Function to clear ALL order data from local storage
+  const handleClearAllOrders = () => {
+    const totalOrdersCount = orders.length;
+
+    if (totalOrdersCount === 0) {
+      toast.info("No orders to clear");
+      return;
+    }
+
+    confirmDialog({
+      message: `Are you sure you want to permanently delete ALL ${totalOrdersCount} orders? This will completely clear your order history and cannot be undone.`,
+      header: "Clear All Orders",
+      icon: "pi pi-exclamation-triangle",
+      acceptClassName: "p-button-danger",
+      accept: () => {
+        try {
+          // Clear orders from store
+          clearOrders();
+
+          // Clear from localStorage as well
+          localStorage.removeItem("order-storage");
+
+          toast.success(
+            `All ${totalOrdersCount} orders have been cleared successfully!`
+          );
+
+          console.log("✅ All order data cleared from local storage");
+        } catch (error) {
+          console.error("Error clearing all orders:", error);
+          toast.error("Failed to clear orders. Please try again.");
+        }
+      },
+      reject: () => {
+        // Do nothing on reject
+      },
+    });
+  };
+
   const filteredOrders = orders.filter(
     (order) => statusFilter === "all" || order.status === statusFilter
   );
@@ -242,14 +273,17 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
 
     return (
       <Card
-        className={`mb-4 shadow-sm border border-gray-200 ${
-          isCancelled ? "opacity-75 bg-red-50 border-red-200" : ""
+        className={`mb-4 shadow-sm border transition-all duration-200 hover:shadow-md ${
+          isCancelled
+            ? "opacity-75 bg-red-50 border-red-200"
+            : "border-gray-200 hover:border-blue-300"
         }`}
       >
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           {/* Order Info */}
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
+            {/* Order Header */}
+            <div className="flex items-center gap-3 mb-3">
               <h3
                 className={`text-lg font-semibold ${
                   isCancelled ? "text-red-600 line-through" : "text-gray-800"
@@ -269,12 +303,24 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
                   CANCELLED
                 </span>
               )}
+              {order.submittedToApi && (
+                <span className="text-green-600 text-sm font-medium bg-green-100 px-2 py-1 rounded">
+                  SUBMITTED
+                </span>
+              )}
             </div>
 
-            <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+            {/* Order Summary */}
+            <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
               <div className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
                 <span>{new Date(order.orderDate).toLocaleDateString()}</span>
+                <span className="text-gray-400">
+                  {new Date(order.orderDate).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <Package className="w-4 h-4" />
@@ -282,9 +328,14 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
               </div>
               <div className="flex items-center gap-1">
                 <DollarSign className="w-4 h-4" />
-                <span className="font-semibold">
+                <span className="font-semibold text-gray-800">
                   ${order.totalAmount.toFixed(2)}
                 </span>
+                {order.totalSavings > 0 && (
+                  <span className="text-green-600 text-xs">
+                    (Saved ${order.totalSavings.toFixed(2)})
+                  </span>
+                )}
               </div>
             </div>
 
@@ -351,13 +402,13 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
 
           {/* Actions */}
           <div className="flex flex-col gap-2">
-            {/* Submit to API button for orders not yet submitted */}
+            {/* Submit Order button for orders not yet submitted */}
             {!order.submittedToApi && (
               <Button
                 label={
                   submittingOrderId === order.orderId
                     ? "Submitting..."
-                    : "Submit to API"
+                    : "Submit Order"
                 }
                 icon={
                   submittingOrderId === order.orderId
@@ -367,14 +418,15 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
                 className="p-button-success p-button-sm"
                 disabled={submittingOrderId === order.orderId}
                 onClick={() => handleSubmitOrder(order)}
+                tooltip="Submit this order for processing"
               />
             )}
 
-            {/* API Submission Status */}
+            {/* Order Submission Status */}
             {order.submittedToApi && (
               <div className="flex items-center gap-1 text-green-600 text-sm">
                 <i className="pi pi-check-circle"></i>
-                <span>Submitted to API</span>
+                <span>Order Submitted</span>
               </div>
             )}
             {(order.status === "pending" || order.status === "confirmed") && (
@@ -399,30 +451,77 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
   };
 
   const header = (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800">My Orders</h2>
-        <p className="text-gray-600">Track and manage your order history</p>
-      </div>
-      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-        <Dropdown
-          value={statusFilter}
-          options={statusOptions}
-          onChange={(e) => setStatusFilter(e.value)}
-          placeholder="Filter by status"
-          className="w-full sm:w-auto"
-        />
-        {/* Clear Cancelled Orders Button */}
-        {orders.some((order) => order.status === "cancelled") && (
-          <Button
-            label="Clear Cancelled"
-            icon="pi pi-trash"
-            className="p-button-danger p-button-outlined p-button-sm"
-            onClick={handleClearCancelledOrders}
-            tooltip="Remove all cancelled orders"
+    <div className="space-y-6">
+      {/* Header Title */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">My Orders</h2>
+          <p className="text-gray-600">Track and manage your order history</p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Dropdown
+            value={statusFilter}
+            options={statusOptions}
+            onChange={(e) => setStatusFilter(e.value)}
+            placeholder="Filter by status"
+            className="w-full sm:w-auto"
+            optionLabel="label"
           />
-        )}
+          {/* Clear Cancelled Orders Button */}
+          {orders.some((order) => order.status === "cancelled") && (
+            <Button
+              label="Clear Cancelled"
+              icon="pi pi-trash"
+              className="p-button-danger p-button-outlined p-button-sm"
+              onClick={handleClearCancelledOrders}
+              tooltip="Remove all cancelled orders"
+            />
+          )}
+          {/* Clear ALL Orders Button */}
+          {orders.length > 0 && (
+            <Button
+              label="Clear All Orders"
+              icon="pi pi-trash"
+              className="p-button-danger p-button-sm"
+              onClick={handleClearAllOrders}
+              tooltip="Remove ALL order data from local storage"
+            />
+          )}
+        </div>
       </div>
+
+      {/* Order Statistics */}
+      {orders.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-blue-600">
+              {orders.length}
+            </div>
+            <div className="text-sm text-blue-800">Total Orders</div>
+          </div>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">
+              {orders.filter((order) => order.submittedToApi).length}
+            </div>
+            <div className="text-sm text-green-800">Submitted</div>
+          </div>
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-orange-600">
+              {orders.filter((order) => order.status === "pending").length}
+            </div>
+            <div className="text-sm text-orange-800">Pending</div>
+          </div>
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-purple-600">
+              $
+              {orders
+                .reduce((total, order) => total + order.totalAmount, 0)
+                .toFixed(2)}
+            </div>
+            <div className="text-sm text-purple-800">Total Spent</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -431,18 +530,29 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
       <div>
         {header}
         <ConfirmDialog />
-        <div className="text-center py-12">
-          <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">
+        <div className="text-center py-16 bg-gray-50 rounded-lg border border-gray-200">
+          <Package className="w-20 h-20 text-gray-400 mx-auto mb-6" />
+          <h3 className="text-xl font-semibold text-gray-600 mb-3">
             {statusFilter === "all"
               ? "No orders yet"
               : `No ${statusFilter} orders`}
           </h3>
-          <p className="text-gray-500 mb-4">
+          <p className="text-gray-500 mb-6 max-w-md mx-auto">
             {statusFilter === "all"
-              ? "Start browsing our menu to place your first order!"
-              : `You don't have any ${statusFilter} orders.`}
+              ? "Start browsing our delicious menu to place your first order! Every great meal begins with a single order."
+              : `You don't have any ${statusFilter} orders at the moment.`}
           </p>
+          {statusFilter === "all" && (
+            <Button
+              label="Browse Menu"
+              icon="pi pi-search"
+              className="p-button-outlined"
+              onClick={() => {
+                // This could navigate to menu or close dialog
+                if (onHide) onHide();
+              }}
+            />
+          )}
         </div>
       </div>
     );

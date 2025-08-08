@@ -58,82 +58,12 @@ const CartIcon: React.FC<CartIconProps> = ({
     setIsSubmittingOrder(true);
 
     try {
-      // Import user service functions
-      const {
-        isFirstOrder,
-        createUserProfileFromFirstOrder,
-        updateUserOrderStatistics,
-        createOrUpdateUserFromCheckout,
-      } = await import("../../../../services/userService");
-
-      // Calculate order statistics first
-      const orderTotal = calculateTotal();
-      const savings = cartMenus.reduce((acc, cartMenu) => {
-        const menuPrice = cartMenu.menu.price || 0;
-        const discount = cartMenu.menu.discount || 0;
-        const discountAmount = (menuPrice * discount) / 100;
-        return acc + discountAmount * cartMenu.quantity;
-      }, 0);
-
-      // Check if this is user's first order
-      const isFirstUserOrder = isFirstOrder();
-      let updatedUser;
-
-      if (isFirstUserOrder) {
-        // Create user profile from first order
-        updatedUser = createUserProfileFromFirstOrder(
-          {
-            phone: checkoutData.phone_number,
-            address: checkoutData.address,
-            telegram_id: checkoutData.telegram_id,
-            telegram_username: checkoutData.telegram_username,
-          },
-          orderTotal,
-          savings
-        );
-      } else {
-        // Get current Telegram user data from WebApp for existing users
-        const telegramWebApp = (
-          window as unknown as {
-            Telegram?: {
-              WebApp?: {
-                initDataUnsafe?: {
-                  user?: {
-                    id?: number;
-                    first_name?: string;
-                    last_name?: string;
-                    username?: string;
-                    photo_url?: string;
-                    language_code?: string;
-                    is_premium?: boolean;
-                  };
-                };
-              };
-            };
-          }
-        ).Telegram?.WebApp;
-        const telegramUser = telegramWebApp?.initDataUnsafe?.user;
-
-        // Update existing user data from checkout form
-        updatedUser = createOrUpdateUserFromCheckout(
-          checkoutData,
-          telegramUser
-        );
-
-        // Update user statistics for existing users
-        updateUserOrderStatistics(orderTotal, savings);
-      }
-
-      // Create order from cart data with enhanced customer info
+      // Simple order creation without complex user management
       const newOrder = createOrderFromCart(cartMenus, {
-        name:
-          `${updatedUser.firstName} ${updatedUser.lastName}`.trim() ||
-          checkoutData.telegram_username,
+        name: checkoutData.telegram_username || "Customer",
         phone: checkoutData.phone_number,
         address: checkoutData.address,
-        email:
-          updatedUser.email ||
-          `${checkoutData.telegram_username}@telegram.user`,
+        email: `${checkoutData.telegram_username}@telegram.user`,
         notes: `Telegram ID: ${checkoutData.telegram_id}, Username: @${checkoutData.telegram_username}`,
         paymentMethod: "cash" as const,
       });
@@ -154,19 +84,10 @@ const CartIcon: React.FC<CartIconProps> = ({
         0
       );
 
-      if (isFirstUserOrder) {
-        toast.success(
-          `🎉 Welcome! Your first order ${
-            newOrder.orderNumber
-          } created successfully! 
-          ${totalItems} items • $${newOrder.totalAmount.toFixed(2)}`
-        );
-      } else {
-        toast.success(
-          `Order ${newOrder.orderNumber} created successfully! 
-          ${totalItems} items • $${newOrder.totalAmount.toFixed(2)}`
-        );
-      }
+      toast.success(
+        `Order ${newOrder.orderNumber} created successfully! 
+        ${totalItems} items • $${newOrder.totalAmount.toFixed(2)}`
+      );
 
       // Show MyOrders after successful checkout
       setShowMyOrders(true);

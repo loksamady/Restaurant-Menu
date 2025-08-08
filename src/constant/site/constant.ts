@@ -10,4 +10,5 @@ export const CHINESE = "cn";
 
 export const EMPTY = "N/A";
 
-export const CUSTOMER_ENDPOINT = `${WEBSITE_V1}/customers`;
+// export const CUSTOMER_ENDPOINT = `${WEBSITE_V1}/customers`;
+export const CUSTOMER_REGISTER_ENDPOINT = `${WEBSITE_V1}/customers`;

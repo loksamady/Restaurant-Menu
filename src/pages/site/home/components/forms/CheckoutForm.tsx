@@ -53,12 +53,26 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
     mutationFn: registerCustomer,
     onSuccess: (response) => {
       console.log("Customer registered successfully:", response);
-      if (response.data?.customerId) {
-        toast.success(`Customer profile created with ID: ${response.data.customerId}`);
+      if (response.data?.customerId && response.data.customerId > 0) {
+        toast.success(
+          `Customer profile created with ID: ${response.data.customerId}`
+        );
+      } else if (response.message === "Customer already exists") {
+        // Don't show success toast for existing customers, already handled in service
+        console.log("Customer already exists, continuing with order");
       }
     },
     onError: (error) => {
       console.error("Customer registration failed:", error);
+      // Check if this is a 409 conflict (customer already exists)
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as { response?: { status?: number } };
+        if (axiosError.response?.status === 409) {
+          // Customer already exists - this is not really an error for our flow
+          console.log("Customer already exists - continuing with order");
+          return; // Don't treat this as an error
+        }
+      }
       // Don't show error toast as the service already handles it
     },
   });
@@ -91,11 +105,12 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
       if (user) {
         setTelegramUser(user);
-        // Pre-fill form fields with Telegram data
-        setValue(
-          "username",
-          user.username || `${user.first_name} ${user.last_name || ""}`.trim()
-        );
+        // Pre-fill form fields with Telegram data - ensure username is never empty
+        const displayName =
+          user.username ||
+          `${user.first_name} ${user.last_name || ""}`.trim() ||
+          `user_${user.id}`;
+        setValue("username", displayName);
         setValue("telegram_id", user.id?.toString() || "");
         setValue("telegram_username", user.username || "");
 
@@ -120,7 +135,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
       setIsReady(true);
     } catch (error) {
       console.error("Error initializing Telegram WebApp:", error);
-      // Fallback for development
+      // Fallback for development - ensure we always have valid data
       const mockUser = {
         id: 123456789,
         first_name: "John",
@@ -163,10 +178,31 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
       addOrder(newOrder);
 
       // Prepare customer data for API submission (no order data)
+      const username =
+        data.username ||
+        telegramUser?.username ||
+        `user_${telegramUser?.id}` ||
+        "Guest";
+      const phoneNumber = data.phone_number?.trim() || "";
+      const address = data.address?.trim() || "";
+
+      // Validate critical fields before API submission
+      if (!username || username.trim().length === 0) {
+        throw new Error("Username is required but missing");
+      }
+
+      if (!phoneNumber || phoneNumber.length === 0) {
+        throw new Error("Phone number is required but missing");
+      }
+
+      if (phoneNumber.length < 5) {
+        throw new Error("Phone number must be at least 5 characters");
+      }
+
       const customerRegistrationData = {
-        username: data.username || telegramUser?.username || "Guest",
-        phone: data.phone_number || "",
-        address: data.address || "",
+        username: username.trim(),
+        phone_number: phoneNumber,
+        address: address,
         telegramId: telegramUser?.id,
         telegramUsername: telegramUser?.username || data.telegram_username,
         profilePicture: telegramUser?.photo_url,
@@ -174,10 +210,41 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
       // Submit customer data to API (this runs in background, doesn't block UI)
       try {
-        await customerRegistrationMutation.mutateAsync(customerRegistrationData);
+        console.log(
+          "Submitting customer data to API:",
+          customerRegistrationData
+        );
+
+        await customerRegistrationMutation.mutateAsync(
+          customerRegistrationData
+        );
       } catch (apiError) {
-        // API error is already handled by the mutation, just log it
-        console.warn("Customer API submission failed, but local order was saved:", apiError);
+        // Check if this is a 409 conflict (customer already exists)
+        if (
+          apiError &&
+          typeof apiError === "object" &&
+          "response" in apiError
+        ) {
+          const axiosError = apiError as { response?: { status?: number } };
+          if (axiosError.response?.status === 409) {
+            // Customer already exists - this is expected, not an error
+            console.log(
+              "Customer already exists - order will proceed normally"
+            );
+          } else {
+            // Other API errors
+            console.warn(
+              "Customer API submission failed, but local order was saved:",
+              apiError
+            );
+          }
+        } else {
+          // Non-axios errors
+          console.warn(
+            "Customer API submission failed, but local order was saved:",
+            apiError
+          );
+        }
       }
 
       // Clear cart after successful order creation
@@ -269,7 +336,8 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
           <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
             <p className="text-orange-800 text-sm">
               <i className="pi pi-exclamation-triangle mr-2"></i>
-              Order saved locally, but customer profile submission failed. You can retry later.
+              Order saved locally, but customer profile submission failed. You
+              can retry later.
             </p>
           </div>
         )}
@@ -359,16 +427,12 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
                 : "Processing Order..."
               : "Submit Order"
           }
-          icon={
-            isSubmittingOrder
-              ? "pi pi-spin pi-spinner"
-              : "pi pi-check"
-          }
+          icon={isSubmittingOrder ? "pi pi-spin pi-spinner" : "pi pi-check"}
           className="w-full"
           disabled={
-            !isValid || 
-            isLoading || 
-            isSubmittingOrder || 
+            !isValid ||
+            isLoading ||
+            isSubmittingOrder ||
             customerRegistrationMutation.isPending
           }
           loading={isSubmittingOrder || customerRegistrationMutation.isPending}
