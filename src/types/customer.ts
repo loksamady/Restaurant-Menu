@@ -17,37 +17,35 @@ export type UpdateAddressType = {
 };
 
 export type CreateCustomerType = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
+  username: string;
+  telegramId?: number;
+  telegramUsername?: string;
   phone?: string;
   address?: string[];
-  dateOfBirth?: string;
+  state?: string;
+  createdAt: string;
 };
 
 export type CustomerType = {
   id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
+  username: string;
+  telegramId?: number;
+  telegramUsername?: string;
   phone?: string;
   address?: string[];
-  dateOfBirth?: string;
+  state?: string;
   createdAt: string;
   updatedAt: string;
 };
 
 export type UpdateCustomerType = {
-  firstName?: string;
-  lastName?: string;
+  username?: string;
+  telegramId?: number;
+  telegramUsername?: string;
   phone?: string;
   address?: string;
-  city?: string;
   state?: string;
-  zipCode?: string;
-  country?: string;
-  dateOfBirth?: string;
+  updatedAt: string;
 };
 
 // Order Types

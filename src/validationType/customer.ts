@@ -35,47 +35,29 @@ export const CustomerLoginSchema = z.object({
 
 // Update Customer Profile Schema
 export const CreateCustomerSchema = z.object({
-  firstName: z
+  username: z
     .string()
-    .min(2, "First name must be at least 2 characters")
-    .max(50, "First name must be less than 50 characters")
+    .min(2, "Username must be at least 2 characters")
+    .max(50, "Username must be less than 50 characters")
     .optional(),
-  lastName: z
+  phone_number: z
     .string()
-    .min(2, "Last name must be at least 2 characters")
-    .max(50, "Last name must be less than 50 characters")
-    .optional(),
-  phone: z
-    .string()
-    .regex(/^\+?[\d\s\-()]+$/, "Please enter a valid phone number")
-    .optional()
-    .or(z.literal("")),
+    .min(1, "Phone number is required")
+    .regex(/^\+?[\d\s\-()]+$/, "Please enter a valid phone number"),
   address: z
     .string()
-    .max(200, "Address must be less than 200 characters")
-    .optional()
-    .or(z.literal("")),
-  city: z
+    .min(1, "Address is required")
+    .max(200, "Address must be less than 200 characters"),
+  telegram_id: z
     .string()
-    .max(50, "City must be less than 50 characters")
-    .optional()
-    .or(z.literal("")),
-  state: z
+    .min(1, "Telegram ID is required")
+    .max(50, "Telegram ID must be less than 50 characters")
+    .optional(),
+  telegram_username: z
     .string()
-    .max(50, "State must be less than 50 characters")
-    .optional()
-    .or(z.literal("")),
-  zipCode: z
-    .string()
-    .max(20, "Zip code must be less than 20 characters")
-    .optional()
-    .or(z.literal("")),
-  country: z
-    .string()
-    .max(50, "Country must be less than 50 characters")
-    .optional()
-    .or(z.literal("")),
-  dateOfBirth: z.string().optional().or(z.literal("")),
+    .min(2, "Telegram username must be at least 2 characters")
+    .max(50, "Telegram username must be less than 50 characters")
+    .optional(),
 });
 
 // Change Password Schema

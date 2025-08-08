@@ -4,26 +4,22 @@ import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { toast } from "sonner";
 import WebApp from "@twa-dev/sdk";
+import { createOrderFromCart } from "@src/util/orderUtil";
+import { orderStore } from "@src/state/order";
+import { userStore } from "@src/state/store";
+import {
+  CreateCustomerSchemaType,
+  CreateCustomerSchema,
+} from "@src/validationType/customer";
+import { CustomerInfo } from "@src/types/order";
+import { registerCustomer } from "@src/api/service/site/customerRegistration.service";
 import { useMutation } from "@tanstack/react-query";
-import { createCustomer } from "@src/api/service/site/customer.service";
-import { CreateCustomerType } from "@src/types/customer";
-
-// Validation schema - username, userid, phone and address required
-const checkoutSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  userid: z.string().min(1, "User ID is required"),
-  phone_number: z.string().min(1, "Phone number is required"),
-  address: z.string().min(1, "Address is required"),
-});
-
-type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
 interface CheckoutFormProps {
   onSubmit: (
-    data: CheckoutFormData & {
+    data: CreateCustomerSchemaType & {
       telegram_id: string;
       telegram_username: string;
       profile_picture?: string;
@@ -45,42 +41,25 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
     language_code?: string;
   } | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
-  // TanStack Query mutation for creating customer
-  const createCustomerMutation = useMutation({
-    mutationFn: async (
-      checkoutData: CheckoutFormData & {
-        telegram_id: string;
-        telegram_username: string;
-        profile_picture?: string;
+  // Get cart data and store actions
+  const cartMenus = userStore((state) => state.menus);
+  const clearCart = userStore((state) => state.clearCart);
+  const addOrder = orderStore((state) => state.addOrder);
+
+  // TanStack Query mutation for customer registration
+  const customerRegistrationMutation = useMutation({
+    mutationFn: registerCustomer,
+    onSuccess: (response) => {
+      console.log("Customer registered successfully:", response);
+      if (response.data?.customerId) {
+        toast.success(`Customer profile created with ID: ${response.data.customerId}`);
       }
-    ) => {
-      // Map checkout data to customer creation format
-      const customerData: CreateCustomerType = {
-        firstName:
-          telegramUser?.first_name ||
-          checkoutData.username.split(" ")[0] ||
-          "Telegram",
-        lastName:
-          telegramUser?.last_name ||
-          checkoutData.username.split(" ").slice(1).join(" ") ||
-          "User",
-        email: `${checkoutData.telegram_username}@telegram.user`, // Generate email from telegram username
-        password: `temp_${checkoutData.telegram_id}`, // Generate temporary password
-        phone: checkoutData.phone_number,
-        address: [checkoutData.address], // Address should be an array
-      };
-
-      console.log("Creating customer with data:", customerData);
-      return await createCustomer(customerData);
-    },
-    onSuccess: (data) => {
-      toast.success("Customer profile created successfully!");
-      console.log("Customer created:", data);
     },
     onError: (error) => {
-      toast.error("Failed to create customer profile");
-      console.error("Customer creation error:", error);
+      console.error("Customer registration failed:", error);
+      // Don't show error toast as the service already handles it
     },
   });
 
@@ -89,9 +68,16 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
     handleSubmit,
     formState: { errors, isValid },
     setValue,
-  } = useForm<CheckoutFormData>({
-    resolver: zodResolver(checkoutSchema),
+  } = useForm<CreateCustomerSchemaType>({
+    resolver: zodResolver(CreateCustomerSchema),
     mode: "onChange",
+    defaultValues: {
+      username: "",
+      phone_number: "",
+      address: "",
+      telegram_id: "",
+      telegram_username: "",
+    },
   });
 
   useEffect(() => {
@@ -110,7 +96,8 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
           "username",
           user.username || `${user.first_name} ${user.last_name || ""}`.trim()
         );
-        setValue("userid", user.id?.toString() || "");
+        setValue("telegram_id", user.id?.toString() || "");
+        setValue("telegram_username", user.username || "");
 
         console.log("Telegram User Data:", user);
       } else {
@@ -124,7 +111,8 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
         };
         setTelegramUser(mockUser);
         setValue("username", mockUser.username);
-        setValue("userid", mockUser.id.toString());
+        setValue("telegram_id", mockUser.id.toString());
+        setValue("telegram_username", mockUser.username);
 
         console.log("Using mock data for development");
       }
@@ -142,25 +130,73 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
       };
       setTelegramUser(mockUser);
       setValue("username", mockUser.username);
-      setValue("userid", mockUser.id.toString());
+      setValue("telegram_id", mockUser.id.toString());
+      setValue("telegram_username", mockUser.username);
       setIsReady(true);
     }
   }, [setValue]);
 
-  const handleFormSubmit = async (data: CheckoutFormData) => {
+  const handleFormSubmit = async (data: CreateCustomerSchemaType) => {
     try {
-      // Combine form data with Telegram user data
+      setIsSubmittingOrder(true);
+
+      // Check if cart has items
+      if (cartMenus.length === 0) {
+        toast.error("Your cart is empty!");
+        return;
+      }
+
+      // Create customer info from form data
+      const customerInfo: CustomerInfo = {
+        name: data.username || telegramUser?.username || "Guest",
+        phone: data.phone_number || "",
+        email: "", // Not collected in this form
+        address: data.address || "",
+        notes: "", // Not collected in this form
+        paymentMethod: "cash", // Default to cash, could be made configurable
+      };
+
+      // Create order from cart with customer info
+      const newOrder = createOrderFromCart(cartMenus, customerInfo);
+
+      // Add order to store
+      addOrder(newOrder);
+
+      // Prepare customer data for API submission (no order data)
+      const customerRegistrationData = {
+        username: data.username || telegramUser?.username || "Guest",
+        phone: data.phone_number || "",
+        address: data.address || "",
+        telegramId: telegramUser?.id,
+        telegramUsername: telegramUser?.username || data.telegram_username,
+        profilePicture: telegramUser?.photo_url,
+      };
+
+      // Submit customer data to API (this runs in background, doesn't block UI)
+      try {
+        await customerRegistrationMutation.mutateAsync(customerRegistrationData);
+      } catch (apiError) {
+        // API error is already handled by the mutation, just log it
+        console.warn("Customer API submission failed, but local order was saved:", apiError);
+      }
+
+      // Clear cart after successful order creation
+      clearCart();
+
+      // Combine form data with Telegram user data for the callback
       const completeData = {
         ...data,
-        telegram_id: telegramUser?.id?.toString() || data.userid,
-        telegram_username: telegramUser?.username || data.username,
+        telegram_id: telegramUser?.id?.toString() || data.telegram_id || "",
+        telegram_username:
+          telegramUser?.username ||
+          data.telegram_username ||
+          data.username ||
+          "",
         profile_picture: telegramUser?.photo_url,
       };
 
-      console.log("Submitting checkout data:", completeData);
-
-      // Create customer via API using TanStack Query
-      await createCustomerMutation.mutateAsync(completeData);
+      console.log("Order created successfully:", newOrder);
+      console.log("Customer data:", completeData);
 
       // Call the original onSubmit callback
       onSubmit(completeData);
@@ -169,6 +205,8 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
     } catch (error) {
       toast.error("Failed to submit order");
       console.error("Checkout error:", error);
+    } finally {
+      setIsSubmittingOrder(false);
     }
   };
 
@@ -226,16 +264,48 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
       )}
 
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-        {/* Display API Error */}
-        {createCustomerMutation.isError && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 text-sm">
+        {/* Display API submission status */}
+        {customerRegistrationMutation.isError && (
+          <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+            <p className="text-orange-800 text-sm">
               <i className="pi pi-exclamation-triangle mr-2"></i>
-              {createCustomerMutation.error?.message ||
-                "Failed to create customer profile"}
+              Order saved locally, but customer profile submission failed. You can retry later.
             </p>
           </div>
         )}
+
+        {customerRegistrationMutation.isSuccess && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800 text-sm">
+              <i className="pi pi-check-circle mr-2"></i>
+              Customer profile successfully created!
+            </p>
+          </div>
+        )}
+
+        {/* Username Field (Auto-filled from Telegram) */}
+        <div>
+          <label htmlFor="username" className="block text-sm font-medium mb-1">
+            Username
+          </label>
+          <InputText
+            id="username"
+            {...register("username")}
+            placeholder="Your username"
+            className="w-full"
+            disabled={isLoading || isSubmittingOrder}
+            readOnly
+          />
+          {errors.username && (
+            <small className="text-red-500 mt-1 block">
+              {errors.username.message}
+            </small>
+          )}
+        </div>
+
+        {/* Hidden fields for Telegram data */}
+        <input type="hidden" {...register("telegram_id")} />
+        <input type="hidden" {...register("telegram_username")} />
 
         {/* Phone Number Field */}
         <div>
@@ -250,7 +320,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
             {...register("phone_number")}
             placeholder="Enter your phone number"
             className="w-full"
-            disabled={isLoading}
+            disabled={isLoading || isSubmittingOrder}
           />
           {errors.phone_number && (
             <small className="text-red-500 mt-1 block">
@@ -270,7 +340,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
             placeholder="Enter your delivery address"
             rows={2}
             className="w-full"
-            disabled={isLoading}
+            disabled={isLoading || isSubmittingOrder}
           />
           {errors.address && (
             <small className="text-red-500 mt-1 block">
@@ -282,12 +352,35 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
         {/* Submit Button */}
         <Button
           type="submit"
-          label="Submit Order"
-          icon="pi pi-check"
+          label={
+            isSubmittingOrder
+              ? customerRegistrationMutation.isPending
+                ? "Creating Profile..."
+                : "Processing Order..."
+              : "Submit Order"
+          }
+          icon={
+            isSubmittingOrder
+              ? "pi pi-spin pi-spinner"
+              : "pi pi-check"
+          }
           className="w-full"
-          disabled={!isValid || isLoading || createCustomerMutation.isPending}
-          loading={isLoading || createCustomerMutation.isPending}
+          disabled={
+            !isValid || 
+            isLoading || 
+            isSubmittingOrder || 
+            customerRegistrationMutation.isPending
+          }
+          loading={isSubmittingOrder || customerRegistrationMutation.isPending}
         />
+
+        {/* API submission status info */}
+        {customerRegistrationMutation.isPending && (
+          <div className="text-center text-sm text-blue-600">
+            <i className="pi pi-cloud-upload mr-1"></i>
+            Creating customer profile...
+          </div>
+        )}
       </form>
     </div>
   );
