@@ -1,0 +1,30 @@
+{/* Display Telegram User Info */} {telegramUser && (
+<div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+  <h4 className="text-sm font-semibold text-blue-800 mb-2">
+    Account Information
+  </h4>
+  <div className="space-y-1 text-sm">
+    <p className="text-blue-700">
+      <span className="font-medium">Name:</span>{" "} {telegramUser.first_name}
+    </p>
+    {telegramUser.username && (
+    <p className="text-blue-700">
+      <span className="font-medium">Username:</span> @ {telegramUser.username}
+    </p>
+    )}
+    <p className="text-blue-700">
+      <span className="font-medium">User ID:</span> {telegramUser.id}
+    </p>
+    {telegramUser.language_code && (
+    <p className="text-blue-700">
+      <span className="font-medium">Language:</span>{" "}
+      {telegramUser.language_code.toUpperCase()}
+    </p>
+    )} {telegramUser.photo_url && (
+    <p className="text-blue-700">
+      <span className="font-medium">Profile Picture:</span> Available
+    </p>
+    )}
+  </div>
+</div>
+)}

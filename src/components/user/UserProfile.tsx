@@ -99,44 +99,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ visible, onHide }) => {
 
         <div className="space-y-3">
           <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Welcome to Our Restaurant!
+            Welcome to Our Merchants!
           </h2>
           <p className="text-xl text-gray-600 font-medium">
             Hello {user.firstName}! 👋
           </p>
-          <p className="text-gray-500 max-w-md mx-auto">
-            Join our community and unlock a personalized dining experience
-          </p>
-        </div>
-      </div>
-
-      <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 border-2 border-blue-200 rounded-2xl p-8 max-w-lg mx-auto shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-        <div className="space-y-6">
-          <div className="text-center">
-            <h3 className="text-2xl font-bold text-blue-800 mb-2">
-              Create Your Profile
-            </h3>
-            <p className="text-blue-700">
-              Your profile will be created automatically when you place your
-              first order
-            </p>
-          </div>
-
-          <div className="grid gap-4">
-            {features.map(({ icon: Icon, color, text }, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm"
-              >
-                <div
-                  className={`w-10 h-10 bg-${color}-100 rounded-full flex items-center justify-center`}
-                >
-                  <Icon className={`w-5 h-5 text-${color}-600`} />
-                </div>
-                <span className="text-gray-700 font-medium">{text}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -225,13 +192,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ visible, onHide }) => {
           </div>
         </div>
 
-        <Button
+        {/* <Button
           icon={<Edit3 className="w-4 h-4" />}
           label="Edit Profile"
           className="bg-white/20 hover:bg-white/30 border-white/30 text-white backdrop-blur-sm transition-all duration-300 rounded-xl px-6 py-3"
           size="small"
           onClick={() => console.log("Edit profile clicked")}
-        />
+        /> */}
       </div>
     </div>
   );

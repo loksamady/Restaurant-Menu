@@ -1,6 +1,6 @@
 import React from "react";
 import { Dialog } from "primereact/dialog";
-import OrderForm from "@src/pages/site/home/components/forms/OrderForm";
+import OrderForm from "@src/pages/site/home/components/CheckoutForm/OrderForm";
 
 interface OrderCardProps {
   visible: boolean;

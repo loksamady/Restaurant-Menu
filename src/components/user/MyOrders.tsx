@@ -264,7 +264,16 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
     });
   };
 
-  const filteredOrders = orders.filter(
+  // Filter out duplicate orders by orderId
+  const uniqueOrdersMap = new Map<string, Order>();
+  orders.forEach((order) => {
+    if (!uniqueOrdersMap.has(order.orderId)) {
+      uniqueOrdersMap.set(order.orderId, order);
+    }
+  });
+  const uniqueOrders = Array.from(uniqueOrdersMap.values());
+
+  const filteredOrders = uniqueOrders.filter(
     (order) => statusFilter === "all" || order.status === statusFilter
   );
 

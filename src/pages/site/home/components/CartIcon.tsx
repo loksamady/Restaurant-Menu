@@ -8,7 +8,7 @@ import { IMAGE_URL } from "@src/constant/env";
 import { orderStore } from "@src/state/order";
 import { createOrderFromCart } from "@src/util/orderUtil";
 import { toast } from "sonner";
-import CheckoutForm from "./forms/CheckoutForm";
+import CheckoutForm from "./CheckoutForm/CheckoutForm";
 import MyOrders from "./MyOrders";
 interface CartIconProps {
   className?: string;

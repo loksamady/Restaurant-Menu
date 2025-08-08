@@ -1,8 +1,24 @@
 import { CartMenuType } from "@src/types/cartMenu";
 import { Order, OrderItem, CustomerInfo } from "@src/types/order";
 
-export const generateOrderId = (): string => {
-  return `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+// Deterministic orderId based on cart and customer info
+export const generateOrderId = (
+  cartMenus: CartMenuType[],
+  customerInfo?: Partial<CustomerInfo>
+): string => {
+  // Use menuIds, quantities, and customer phone as a hash
+  const cartString = cartMenus
+    .map((cm) => `${cm.menu.menuId}:${cm.quantity}`)
+    .join(",");
+  const customerString = customerInfo?.phone || "";
+  const raw = `${cartString}|${customerString}`;
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    hash = (hash << 5) - hash + raw.charCodeAt(i);
+    hash |= 0;
+  }
+  return `order_${Math.abs(hash)}`;
 };
 
 export const generateOrderNumber = (): string => {
@@ -112,7 +128,7 @@ export const createOrderFromCart = (
   cartMenus: CartMenuType[],
   customerInfo?: Partial<CustomerInfo>
 ): Order => {
-  const orderId = generateOrderId();
+  const orderId = generateOrderId(cartMenus, customerInfo);
   const orderNumber = generateOrderNumber();
   const orderItems = convertCartToOrderItems(cartMenus);
   const { originalAmount, totalAmount, totalSavings } =
