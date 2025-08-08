@@ -186,7 +186,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ visible, onHide }) => {
                       onError={(e) => {
                         // Hide the image and show initials instead
                         const target = e.target as HTMLImageElement;
-                        target.src = "";
+                        target.src = '';
                       }}
                     />
                     {user.isPremium && (
@@ -249,9 +249,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ visible, onHide }) => {
                         <Package className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-gray-800">
-                          My Orders
-                        </h3>
+                        <h3 className="text-xl font-bold text-gray-800">My Orders</h3>
                         <p className="text-sm text-gray-500">
                           Track and manage your orders
                         </p>
