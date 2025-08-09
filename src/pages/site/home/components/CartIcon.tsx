@@ -9,7 +9,6 @@ import { orderStore } from "@src/state/order";
 import { createOrderFromCart } from "@src/util/orderUtil";
 import { toast } from "sonner";
 import CheckoutForm from "./CheckoutForm/CheckoutForm";
-import MyOrders from "./MyOrders";
 interface CartIconProps {
   className?: string;
   itemCount?: number;
@@ -26,7 +25,7 @@ const CartIcon: React.FC<CartIconProps> = ({
 }: CartIconProps) => {
   const [visible, setVisible] = useState(false);
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
-  const [showMyOrders, setShowMyOrders] = useState(false);
+  // const [showMyOrders, setShowMyOrders] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const cartMenus = userStore((state) => state.menus);
   const resetCart = userStore((state) => state.clearCart);
@@ -90,7 +89,7 @@ const CartIcon: React.FC<CartIconProps> = ({
       );
 
       // Show MyOrders after successful checkout
-      setShowMyOrders(true);
+  // setShowMyOrders(true);
 
       // Call the onCheckout callback
       if (onCheckout) {
@@ -429,9 +428,6 @@ const CartIcon: React.FC<CartIconProps> = ({
           isLoading={isSubmittingOrder}
         />
       </Dialog>
-
-      {/* My Orders Dialog */}
-      <MyOrders visible={showMyOrders} onHide={() => setShowMyOrders(false)} />
     </>
   );
 };

@@ -205,34 +205,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ visible, onHide }) => {
 
   const OrdersSection = () => (
     <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-      <div className="bg-gradient-to-r from-gray-50 via-blue-50 to-purple-50 px-8 py-6 border-b border-gray-100">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-              <Package className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-gray-800">My Orders</h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Track and manage all your orders
-              </p>
-            </div>
-          </div>
-
-          {orders.length > 0 && (
-            <div className="flex items-center gap-3">
-              <Badge
-                value={orders.length}
-                className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg"
-              />
-              <span className="text-sm text-gray-500 font-medium">
-                {orders.length === 1 ? "active order" : "total orders"}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
       <div className="p-8">
         {orders.length === 0 ? (
           <div className="text-center py-16 space-y-6">

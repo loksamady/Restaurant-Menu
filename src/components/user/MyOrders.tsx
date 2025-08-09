@@ -377,15 +377,6 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
 
             {/* Customer & Delivery Info */}
             <div className="mt-3 text-sm text-gray-600 space-y-1">
-              <div>
-                <strong>Customer:</strong> {order.customerInfo.name} -{" "}
-                {order.customerInfo.phone}
-              </div>
-              {order.customerInfo.email && (
-                <div>
-                  <strong>Email:</strong> {order.customerInfo.email}
-                </div>
-              )}
               {order.deliveryAddress && (
                 <div>
                   <strong>Delivery:</strong> {order.deliveryAddress}
@@ -396,10 +387,6 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
                   <strong>Notes:</strong> {order.specialInstructions}
                 </div>
               )}
-              <div>
-                <strong>Payment:</strong>{" "}
-                {order.customerInfo.paymentMethod.toUpperCase()}
-              </div>
               {order.totalSavings > 0 && (
                 <div className="text-green-600">
                   <strong>Total Savings:</strong> $
@@ -486,16 +473,6 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
               tooltip="Remove all cancelled orders"
             />
           )}
-          {/* Clear ALL Orders Button */}
-          {orders.length > 0 && (
-            <Button
-              label="Clear All Orders"
-              icon="pi pi-trash"
-              className="p-button-danger p-button-sm"
-              onClick={handleClearAllOrders}
-              tooltip="Remove ALL order data from local storage"
-            />
-          )}
         </div>
       </div>
 
@@ -504,7 +481,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-blue-600">
-              {orders.length}
+              {uniqueOrders.length}
             </div>
             <div className="text-sm text-blue-800">Total Orders</div>
           </div>
@@ -516,14 +493,17 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
           </div>
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-orange-600">
-              {orders.filter((order) => order.status === "pending").length}
+              {
+                uniqueOrders.filter((order) => order.status === "pending")
+                  .length
+              }
             </div>
             <div className="text-sm text-orange-800">Pending</div>
           </div>
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-purple-600">
               $
-              {orders
+              {uniqueOrders
                 .reduce((total, order) => total + order.totalAmount, 0)
                 .toFixed(2)}
             </div>
