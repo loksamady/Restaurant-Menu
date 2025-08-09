@@ -1,25 +1,15 @@
+// ...existing code...
 import React from "react";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 import useCheckoutForm from "./useCheckoutForm";
-import { CreateCustomerSchemaType } from "./validation";
+// ...existing code...
 
-interface CheckoutFormProps {
-  onSubmit: (
-    data: CreateCustomerSchemaType & {
-      telegram_id: string;
-      telegram_username: string;
-      profile_picture?: string;
-    }
-  ) => void;
-  isLoading?: boolean;
-}
+// No props needed
+// ...existing code...
 
-const CheckoutForm: React.FC<CheckoutFormProps> = ({
-  onSubmit,
-  isLoading = false,
-}) => {
+const CheckoutForm: React.FC = () => {
   const {
     register,
     handleSubmit,
@@ -27,10 +17,10 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
     isValid,
     isSubmittingOrder,
     isReady,
+    customerRegistrationMutation,
     telegramUser,
     handleFormSubmit,
-    customerRegistrationMutation,
-  } = useCheckoutForm(onSubmit, isLoading);
+  } = useCheckoutForm();
 
   if (!isReady) {
     return (
@@ -42,6 +32,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
       </div>
     );
   }
+  // Submission handled in useCheckoutForm
 
   return (
     <div className="p-4">
@@ -68,8 +59,26 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
             </p>
           </div>
         )}
-
-        {/* Name Field (Auto-filled from Telegram, but editable) */}
+        {/* Profile Picture Preview (from Telegram) */}
+        {telegramUser?.profile_picture && (
+          <div className="mb-2 flex items-center">
+            <img
+              src={telegramUser.profile_picture}
+              alt="Profile"
+              className="w-12 h-12 rounded-full mr-3 border"
+            />
+            <span className="text-sm text-gray-700">
+              Profile picture from Telegram
+            </span>
+          </div>
+        )}
+        <input
+          type="file"
+          id="profile_image"
+          style={{ display: "none" }}
+          accept="image/*"
+        />
+        {/* Name Field (Read-only, direct from Telegram Mini App) */}
         <div>
           <label
             htmlFor="first_name"
@@ -79,15 +88,20 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
           </label>
           <InputText
             id="first_name"
-            {...register("first_name")}
-            placeholder="Enter your name"
+            value={telegramUser?.first_name || ""}
             className="w-full"
-            disabled={isLoading || isSubmittingOrder}
-            defaultValue={telegramUser?.first_name || ""}
+            disabled={true}
+            readOnly
           />
-          {errors.first_name && (
-            <small className="text-red-500 mt-1 block">
-              {errors.first_name.message}
+          {!telegramUser?.first_name && (
+            <small className="text-orange-500 mt-1 block">
+              Unable to get your name from Telegram Mini App. Please check your
+              Telegram profile.
+            </small>
+          )}
+          {telegramUser?.first_name && (
+            <small className="text-gray-500 mt-1 block">
+              Name fetched directly from Telegram Mini App
             </small>
           )}
         </div>
@@ -151,7 +165,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
             {...register("phone_number")}
             placeholder="Enter your phone number"
             className="w-full"
-            disabled={isLoading || isSubmittingOrder}
+            disabled={isSubmittingOrder}
           />
           {errors.phone_number && (
             <small className="text-red-500 mt-1 block">
@@ -171,7 +185,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
             placeholder="Enter your delivery address"
             rows={2}
             className="w-full"
-            disabled={isLoading || isSubmittingOrder}
+            disabled={isSubmittingOrder}
           />
           {errors.address && (
             <small className="text-red-500 mt-1 block">
@@ -179,7 +193,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
             </small>
           )}
         </div>
-
         {/* Submit Button */}
         <Button
           type="submit"
@@ -192,14 +205,15 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
           }
           icon={isSubmittingOrder ? "pi pi-spin pi-spinner" : "pi pi-check"}
           className="w-full"
-          disabled={
-            !isValid ||
-            isLoading ||
-            isSubmittingOrder ||
-            customerRegistrationMutation.isPending
-          }
+          disabled={false}
           loading={isSubmittingOrder || customerRegistrationMutation.isPending}
         />
+        {/* Debug info for button state */}
+        <div className="mt-2 text-xs text-gray-500">
+          <div>isValid: {String(isValid)}</div>
+          <div>isSubmittingOrder: {String(isSubmittingOrder)}</div>
+          <div>isPending: {String(customerRegistrationMutation.isPending)}</div>
+        </div>
 
         {/* API submission status info */}
         {customerRegistrationMutation.isPending && (

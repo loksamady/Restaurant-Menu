@@ -6,121 +6,140 @@ import { Badge } from "primereact/badge";
 import {
   Package,
   User,
-  Star,
-  Mail,
   Phone,
   Calendar,
-  Edit3,
   ShoppingCart,
   Crown,
 } from "lucide-react";
 import MyOrders from "./MyOrders";
 import { IMAGE_URL } from "@src/constant/env";
 import { orderStore } from "@src/state/order";
-import { useTelegramWebApp } from "@src/hooks/useTelegramWebApp";
+import { getCustomer } from "@src/api/service/site/customerRegistration.service";
+import { useEffect, useState } from "react";
 
 interface UserProfileProps {
   visible: boolean;
   onHide: () => void;
 }
 
+// User data type for profile display
 interface UserData {
-  id: number | string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  avatar: string | null;
-  username: string;
-  languageCode: string;
-  isPremium: boolean;
-  createdAt: string;
+  id?: number | string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  avatar?: string | null;
+  username?: string;
+  languageCode?: string;
+  isPremium?: boolean;
+  create_at?: string;
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({ visible, onHide }) => {
+  // Loading and error state for profile
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const orders = orderStore((state) => state.orders);
-  const { user: telegramUser } = useTelegramWebApp();
+  // State for customer data
+  const [user, setUser] = useState<UserData>({
+    id: "guest",
+    firstName: "Guest",
+    lastName: "",
+    phone: "",
+    avatar: null,
+    username: "",
+    languageCode: "en",
+    isPremium: false,
+    create_at: new Date().toISOString().split("T")[0],
+  });
 
-  // Simple user data logic - use Telegram user or default guest
-  const user: UserData = telegramUser
-    ? {
-        id: telegramUser.id,
-        firstName: telegramUser.first_name,
-        lastName: telegramUser.last_name || "",
-        email: "",
-        phone: "",
-        avatar: telegramUser.photo_url || null,
-        username: telegramUser.username || "",
-        languageCode: telegramUser.language_code || "en",
-        isPremium: telegramUser.is_premium || false,
-        createdAt: new Date().toISOString().split("T")[0],
+  // Fetch and set customer data from local store or API
+  // Always use latest order's customerInfo for UserProfile
+  const fetchCustomer = () => {
+    setLoading(true);
+    setError(null);
+    if (orders.length > 0) {
+      const latestOrder = orders[orders.length - 1];
+      const localCustomer = latestOrder.customerInfo;
+      if (localCustomer && localCustomer.id && localCustomer.name) {
+        setUser({
+          id: localCustomer.id,
+          firstName:
+            localCustomer.name?.split(" ")[0] ||
+            localCustomer.name ||
+            "Customer",
+          lastName: localCustomer.name?.split(" ")[1] || "",
+          phone: localCustomer.phone || "",
+          avatar: localCustomer.profile_picture || null,
+          username: localCustomer.username || "",
+          languageCode: localCustomer.languageCode || "en",
+          isPremium: localCustomer.isPremium || false,
+          create_at:
+            localCustomer.create_at || new Date().toISOString().split("T")[0],
+        });
+        setLoading(false);
+        return;
       }
-    : {
-        id: "guest",
-        firstName: "Guest",
-        lastName: "",
-        email: "",
-        phone: "",
-        avatar: null,
-        username: "",
-        languageCode: "en",
-        isPremium: false,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
+      // If no full info, fallback to API
+      if (localCustomer && localCustomer.id) {
+        getCustomer(String(localCustomer.id))
+          .then((customer) => {
+            if (customer) {
+              setUser({
+                id: customer.id,
+                firstName:
+                  customer.name?.split(" ")[0] || customer.name || "Customer",
+                lastName: customer.name?.split(" ")[1] || "",
+                phone: customer.phone || "",
+                avatar: customer.profile_picture || null,
+                username: customer.username || "",
+                languageCode: customer.languageCode || "en",
+                isPremium: customer.isPremium || false,
+                create_at:
+                  customer.create_at || new Date().toISOString().split("T")[0],
+              });
+            } else {
+              setError("No customer data found for this ID.");
+            }
+          })
+          .catch(() => {
+            setError("Failed to fetch customer data from API.");
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+        return;
+      }
+    }
+    setError("No customer ID available. Please submit an order first.");
+    setLoading(false);
+  };
 
-  const hasProfile = orders.length > 0; // Has profile if user has placed orders
-  const initials = user.firstName.charAt(0) + (user.lastName.charAt(0) || "");
+  useEffect(() => {
+    fetchCustomer();
+    // Listen for customer-updated event to refresh profile
+    const handler = () => fetchCustomer();
+    window.addEventListener("customer-updated", handler);
+    return () => window.removeEventListener("customer-updated", handler);
+  }, [orders]);
+
+  // Profile display helpers
+  const initials = `${user.firstName?.charAt(0) ?? "G"}${
+    user.lastName?.charAt(0) ?? ""
+  }`;
   const displayName =
-    `${user.firstName} ${user.lastName}`.trim() || "Guest User";
-  const imageUrl = user.avatar?.startsWith("http")
-    ? user.avatar
-    : user.avatar
-    ? `${IMAGE_URL}/${user.avatar}`
-    : undefined;
+    `${user.firstName ?? "Guest"} ${user.lastName ?? ""}`.trim() ||
+    "Guest User";
+  const imageUrl =
+    user.avatar &&
+    typeof user.avatar === "string" &&
+    user.avatar.startsWith("http")
+      ? user.avatar
+      : user.avatar
+      ? `${IMAGE_URL}/${user.avatar}`
+      : undefined;
 
-  // Feature items
-  const features = [
-    { icon: Package, color: "green", text: "Order history tracking" },
-    { icon: Star, color: "blue", text: "Personalized recommendations" },
-    { icon: Crown, color: "purple", text: "Exclusive rewards & offers" },
-  ];
-
-  const WelcomeScreen = () => (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-8">
-      <div className="space-y-6">
-        <div className="relative">
-          <div className="w-32 h-32 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto shadow-2xl border-4 border-white">
-            <User className="w-16 h-16 text-blue-600" />
-          </div>
-          <div className="absolute -top-2 -right-2 w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
-            <Crown className="w-6 h-6 text-white" />
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Welcome to Our Merchants!
-          </h2>
-          <p className="text-xl text-gray-600 font-medium">
-            Hello {user.firstName}! 👋
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <Button
-          label="Browse Menu & Place Order"
-          icon={<ShoppingCart className="w-5 h-5 mr-2" />}
-          onClick={onHide}
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-        />
-        <p className="text-sm text-gray-500">
-          Start shopping to create your profile automatically ✨
-        </p>
-      </div>
-    </div>
-  );
-
+  // Profile header component
   const ProfileHeader = () => (
     <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-3xl p-8 text-white shadow-2xl">
       <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 animate-pulse"></div>
@@ -164,14 +183,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ visible, onHide }) => {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-6 text-white/90">
-            {user.email && (
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-medium">{user.email}</span>
-              </div>
-            )}
+            {/* Email field removed */}
             {user.phone && (
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
@@ -187,22 +199,15 @@ const UserProfile: React.FC<UserProfileProps> = ({ visible, onHide }) => {
               <Calendar className="w-4 h-4" />
             </div>
             <span className="text-sm font-medium">
-              Member since {new Date(user.createdAt).getFullYear()}
+              Member since {new Date(user.create_at ?? "").getFullYear()}
             </span>
           </div>
         </div>
-
-        {/* <Button
-          icon={<Edit3 className="w-4 h-4" />}
-          label="Edit Profile"
-          className="bg-white/20 hover:bg-white/30 border-white/30 text-white backdrop-blur-sm transition-all duration-300 rounded-xl px-6 py-3"
-          size="small"
-          onClick={() => console.log("Edit profile clicked")}
-        /> */}
       </div>
     </div>
   );
 
+  // Orders section component
   const OrdersSection = () => (
     <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
       <div className="p-8">
@@ -241,6 +246,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ visible, onHide }) => {
     </div>
   );
 
+  // Main profile dialog
   return (
     <Dialog
       header={
@@ -267,13 +273,57 @@ const UserProfile: React.FC<UserProfileProps> = ({ visible, onHide }) => {
       className="user-profile-dialog"
     >
       <div className="space-y-8 p-4 max-h-[calc(95vh-120px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-        {!hasProfile ? (
-          <WelcomeScreen />
-        ) : (
-          <div className="space-y-8">
-            <ProfileHeader />
-            <OrdersSection />
+        {loading ? (
+          <div className="p-8 text-center">
+            <i className="pi pi-spinner pi-spin text-2xl mb-4"></i>
+            <p className="text-gray-600">Loading customer data...</p>
           </div>
+        ) : error ? (
+          <div className="p-8 text-center">
+            <h4 className="text-2xl font-bold text-gray-700 mb-2">Error</h4>
+            <p className="text-red-500 max-w-md mx-auto mb-6">{error}</p>
+            <Button
+              label="Retry"
+              icon={<ShoppingCart className="w-5 h-5 mr-2" />}
+              onClick={fetchCustomer}
+              className="bg-gradient-to-r from-red-500 to-pink-600 border-0 px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+            />
+          </div>
+        ) : (
+          <>
+            <ProfileHeader />
+            <div className="space-y-8">
+              {orders.length === 0 ? (
+                <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
+                  <div className="p-8 text-center">
+                    <div className="relative mb-6">
+                      <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto shadow-lg">
+                        <Package className="w-12 h-12 text-gray-400" />
+                      </div>
+                      <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                        <ShoppingCart className="w-4 h-4 text-white" />
+                      </div>
+                    </div>
+                    <h4 className="text-2xl font-bold text-gray-700 mb-2">
+                      No orders yet
+                    </h4>
+                    <p className="text-gray-500 max-w-md mx-auto mb-6">
+                      You haven't placed any orders yet. Browse the menu and add
+                      items to start your order!
+                    </p>
+                    <Button
+                      label="Browse Menu & Place Order"
+                      icon={<ShoppingCart className="w-5 h-5 mr-2" />}
+                      onClick={onHide}
+                      className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 border-0 px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <OrdersSection />
+              )}
+            </div>
+          </>
         )}
       </div>
     </Dialog>

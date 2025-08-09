@@ -16,6 +16,7 @@ interface MyOrdersProps {
   onHide?: () => void;
 }
 
+// Order type is imported from store, but kept here for clarity
 interface Order {
   orderId: string;
   orderNumber: string;
@@ -61,7 +62,6 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
   const removeCancelledOrders = orderStore(
     (state) => state.removeCancelledOrders
   );
-  const clearOrders = orderStore((state) => state.clearOrders);
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [submittingOrderId, setSubmittingOrderId] = useState<string | null>(
@@ -69,7 +69,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
   );
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
 
-  // Enhanced status options with icons
+  // Status options for filtering
   const statusOptions = [
     { label: "All Orders", value: "all", icon: "pi pi-list" },
     { label: "Pending", value: "pending", icon: "pi pi-clock" },
@@ -115,7 +115,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
     }
   };
 
-  // Function to mark order as submitted (simulated API submission)
+  // Mark order as submitted (simulated API submission)
   const handleSubmitOrder = async (order: Order) => {
     if (order.submittedToApi) {
       toast.info("Order has already been submitted");
@@ -155,7 +155,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
     }
   };
 
-  // Function to show delete confirmation
+  // Show delete confirmation dialog
   const confirmDeleteOrder = (order: Order) => {
     confirmDialog({
       message: `Are you sure you want to permanently delete order ${order.orderNumber}? This action cannot be undone and the order will be completely removed from your history.`,
@@ -169,7 +169,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
     });
   };
 
-  // Function to delete order
+  // Delete order from store
   const handleDeleteOrder = async (order: Order) => {
     if (order.status !== "pending" && order.status !== "confirmed") {
       toast.error("Only pending or confirmed orders can be deleted");
@@ -193,7 +193,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
     }
   };
 
-  // Function to clear all cancelled orders
+  // Clear all cancelled orders from store
   const handleClearCancelledOrders = () => {
     const cancelledOrdersCount = orders.filter(
       (order) => order.status === "cancelled"
@@ -226,44 +226,6 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
     });
   };
 
-  // Function to clear ALL order data from local storage
-  const handleClearAllOrders = () => {
-    const totalOrdersCount = orders.length;
-
-    if (totalOrdersCount === 0) {
-      toast.info("No orders to clear");
-      return;
-    }
-
-    confirmDialog({
-      message: `Are you sure you want to permanently delete ALL ${totalOrdersCount} orders? This will completely clear your order history and cannot be undone.`,
-      header: "Clear All Orders",
-      icon: "pi pi-exclamation-triangle",
-      acceptClassName: "p-button-danger",
-      accept: () => {
-        try {
-          // Clear orders from store
-          clearOrders();
-
-          // Clear from localStorage as well
-          localStorage.removeItem("order-storage");
-
-          toast.success(
-            `All ${totalOrdersCount} orders have been cleared successfully!`
-          );
-
-          console.log("✅ All order data cleared from local storage");
-        } catch (error) {
-          console.error("Error clearing all orders:", error);
-          toast.error("Failed to clear orders. Please try again.");
-        }
-      },
-      reject: () => {
-        // Do nothing on reject
-      },
-    });
-  };
-
   // Filter out duplicate orders by orderId
   const uniqueOrdersMap = new Map<string, Order>();
   orders.forEach((order) => {
@@ -277,6 +239,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
     (order) => statusFilter === "all" || order.status === statusFilter
   );
 
+  // Render a single order card
   const orderTemplate = (order: Order) => {
     const isCancelled = order.status === "cancelled";
 
@@ -446,6 +409,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
     );
   };
 
+  // Header for orders view
   const header = (
     <div className="space-y-6">
       {/* Header Title */}
@@ -514,6 +478,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
     </div>
   );
 
+  // No orders found view
   if (filteredOrders.length === 0) {
     return (
       <div>
@@ -547,7 +512,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
     );
   }
 
-  // If used as a dialog (visible prop provided), wrap in Dialog
+  // Dialog wrapper for modal usage
   if (visible !== undefined) {
     return (
       <Dialog

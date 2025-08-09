@@ -6,7 +6,7 @@ export function getTelegramUser(WebApp: any) {
     first_name: user.first_name,
     last_name: user.last_name,
     username: user.username,
-    photo_url: user.photo_url,
+    profile_picture: user.photo_url,
     language_code: user.language_code,
   };
 }
@@ -17,7 +17,7 @@ export function getMockTelegramUser() {
     first_name: "John",
     last_name: "Doe",
     username: "johndoe",
-    photo_url: undefined,
+    profile_picture: undefined,
     language_code: "en",
   };
 }

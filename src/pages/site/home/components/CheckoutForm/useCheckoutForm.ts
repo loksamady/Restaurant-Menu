@@ -11,13 +11,10 @@ import { orderStore } from "@src/state/order";
 import { userStore } from "@src/state/store";
 import { useMutation } from "@tanstack/react-query";
 
-export default function useCheckoutForm(
-  onSubmit: Function,
-  isLoading: boolean = false
-) {
+export default function useCheckoutForm() {
   const [telegramUser, setTelegramUser] = useState<any>(null);
-  const [isReady, setIsReady] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const cartMenus = userStore((state) => state.menus);
   const clearCart = userStore((state) => state.clearCart);
   const addOrder = orderStore((state) => state.addOrder);
@@ -34,13 +31,6 @@ export default function useCheckoutForm(
   } = useForm<CreateCustomerSchemaType>({
     resolver: zodResolver(CreateCustomerSchema),
     mode: "onChange",
-    defaultValues: {
-      username: "",
-      phone_number: "",
-      address: "",
-      telegram_id: "",
-      telegram_username: "",
-    },
   });
 
   useEffect(() => {
@@ -49,16 +39,17 @@ export default function useCheckoutForm(
       WebApp.expand();
       const user = getTelegramUser(WebApp) || getMockTelegramUser();
       setTelegramUser(user);
-      setValue("username", user.username);
+      setValue("username", user.first_name || user.first_name || "");
+      setValue("profile_picture", user.profile_picture || "");
       setValue("telegram_id", user.id?.toString() || "");
       setValue("telegram_username", user.username || "");
       setIsReady(true);
     } catch {
       const mockUser = getMockTelegramUser();
       setTelegramUser(mockUser);
-      setValue("username", mockUser.username);
-      setValue("telegram_id", mockUser.id.toString());
-      setValue("telegram_username", mockUser.username);
+      setValue("username", mockUser.username || mockUser.first_name || "");
+      setValue("telegram_id", mockUser.id?.toString() || "");
+      setValue("telegram_username", mockUser.username || "");
       setIsReady(true);
     }
   }, [setValue]);
@@ -83,12 +74,15 @@ export default function useCheckoutForm(
     }
     let apiSuccess = false;
     try {
-      await customerRegistrationMutation.mutateAsync({
+      const customerPayload = {
         ...data,
-        telegramId: telegramUser?.id,
-        telegramUsername: telegramUser?.username,
-        profilePicture: telegramUser?.photo_url,
-      });
+        telegram_id: telegramUser?.id?.toString() || data.telegram_id || "",
+        telegram_username:
+          telegramUser?.username || data.telegram_username || "",
+        profile_picture: telegramUser?.photo_url || data.profile_picture || "",
+      };
+      console.log("Sending customer data to API backend:", customerPayload);
+      await customerRegistrationMutation.mutateAsync(customerPayload);
       apiSuccess = true;
     } catch (e: any) {
       if (e?.response?.status === 409) apiSuccess = true;
@@ -107,12 +101,7 @@ export default function useCheckoutForm(
       if (!existingOrder) {
         addOrder(order);
         clearCart();
-        onSubmit({
-          ...data,
-          telegram_id: telegramUser?.id?.toString(),
-          telegram_username: telegramUser?.username,
-          profile_picture: telegramUser?.photo_url,
-        });
+        window.dispatchEvent(new Event("customer-updated"));
         toast.success("Order submitted!");
       } else {
         toast.error("Order already submitted!");
@@ -126,10 +115,10 @@ export default function useCheckoutForm(
     handleSubmit,
     errors,
     isValid,
+    handleFormSubmit,
     isSubmittingOrder,
     isReady,
-    telegramUser,
-    handleFormSubmit,
     customerRegistrationMutation,
+    telegramUser,
   };
 }

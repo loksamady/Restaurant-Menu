@@ -9,6 +9,7 @@ import { orderStore } from "@src/state/order";
 import { createOrderFromCart } from "@src/util/orderUtil";
 import { toast } from "sonner";
 import CheckoutForm from "./CheckoutForm/CheckoutForm";
+import { CreateCustomerSchemaType } from "./CheckoutForm/validation";
 interface CartIconProps {
   className?: string;
   itemCount?: number;
@@ -48,22 +49,24 @@ const CartIcon: React.FC<CartIconProps> = ({
     setShowCheckoutForm(true);
   };
 
-  const handleCheckoutSubmit = async (checkoutData: {
-    phone_number: string;
-    address: string;
-    telegram_id: string;
-    telegram_username: string;
-  }) => {
+  const handleCheckoutSubmit = async (
+    checkoutData: CreateCustomerSchemaType
+  ) => {
     setIsSubmittingOrder(true);
 
     try {
       // Simple order creation without complex user management
       const newOrder = createOrderFromCart(cartMenus, {
-        name: checkoutData.telegram_username || "Customer",
+        name:
+          checkoutData.telegram_username || checkoutData.username || "Customer",
         phone: checkoutData.phone_number,
         address: checkoutData.address,
-        email: `${checkoutData.telegram_username}@telegram.user`,
-        notes: `Telegram ID: ${checkoutData.telegram_id}, Username: @${checkoutData.telegram_username}`,
+        email: `${
+          checkoutData.telegram_username || checkoutData.username
+        }@telegram.user`,
+        notes: `Telegram ID: ${checkoutData.telegram_id}, Username: @${
+          checkoutData.telegram_username || checkoutData.username
+        }`,
         paymentMethod: "cash" as const,
       });
 
@@ -89,7 +92,7 @@ const CartIcon: React.FC<CartIconProps> = ({
       );
 
       // Show MyOrders after successful checkout
-  // setShowMyOrders(true);
+      // setShowMyOrders(true);
 
       // Call the onCheckout callback
       if (onCheckout) {
@@ -423,10 +426,7 @@ const CartIcon: React.FC<CartIconProps> = ({
           fontSize: "1.1rem",
         }}
       >
-        <CheckoutForm
-          onSubmit={handleCheckoutSubmit}
-          isLoading={isSubmittingOrder}
-        />
+        <CheckoutForm />
       </Dialog>
     </>
   );

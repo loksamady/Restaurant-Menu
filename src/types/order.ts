@@ -11,8 +11,14 @@ export interface OrderItem {
 }
 
 export interface CustomerInfo {
+  id?: number | string;
   name: string;
   phone: string;
+  profile_picture?: string;
+  username?: string;
+  languageCode?: string;
+  isPremium?: boolean;
+  create_at?: string;
   email?: string;
   address?: string;
   notes?: string;
