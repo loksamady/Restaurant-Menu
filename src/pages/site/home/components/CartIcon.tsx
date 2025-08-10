@@ -26,7 +26,7 @@ const CartIcon: React.FC<CartIconProps> = ({
 }: CartIconProps) => {
   const [visible, setVisible] = useState(false);
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
-  // const [showMyOrders, setShowMyOrders] = useState(false);
+  const [showMyOrders, setShowMyOrders] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const cartMenus = userStore((state) => state.menus);
   const resetCart = userStore((state) => state.clearCart);
@@ -69,8 +69,17 @@ const CartIcon: React.FC<CartIconProps> = ({
         }`,
         paymentMethod: "cash" as const,
       });
-
-      // Add order to store
+        // If customer profile exists, go directly to MyOrders
+        const orders = orderStore.getState().orders;
+        const latestOrder = orders.length > 0 ? orders[orders.length - 1] : null;
+        const hasCustomerProfile = latestOrder && latestOrder.customerInfo && latestOrder.customerInfo.phone;
+        if (hasCustomerProfile) {
+          setShowMyOrders(true);
+          setVisible(false);
+          return;
+        }
+        // Otherwise, show checkout form
+        setShowCheckoutForm(true);
       addOrder(newOrder);
 
       // Clear the cart
@@ -131,6 +140,7 @@ const CartIcon: React.FC<CartIconProps> = ({
           </span>
         )}
       </div>
+      {/* Dialog for Shopping Cart */}
       <Dialog
         header="Shopping Cart"
         visible={visible}

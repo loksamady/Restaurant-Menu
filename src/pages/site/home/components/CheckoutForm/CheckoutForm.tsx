@@ -80,26 +80,27 @@ const CheckoutForm: React.FC = () => {
         />
         {/* Name Field (Read-only, direct from Telegram Mini App) */}
         <div>
-          <label
-            htmlFor="first_name"
-            className="block text-sm font-medium mb-1"
-          >
+          <label htmlFor="full_name" className="block text-sm font-medium mb-1">
             Name *
           </label>
           <InputText
-            id="first_name"
-            value={telegramUser?.first_name || ""}
+            id="full_name"
+            value={
+              telegramUser?.first_name && telegramUser?.last_name
+                ? `${telegramUser.first_name} ${telegramUser.last_name}`
+                : telegramUser?.first_name || telegramUser?.last_name || ""
+            }
             className="w-full"
             disabled={true}
             readOnly
           />
-          {!telegramUser?.first_name && (
+          {!(telegramUser?.first_name || telegramUser?.last_name) && (
             <small className="text-orange-500 mt-1 block">
               Unable to get your name from Telegram Mini App. Please check your
               Telegram profile.
             </small>
           )}
-          {telegramUser?.first_name && (
+          {(telegramUser?.first_name || telegramUser?.last_name) && (
             <small className="text-gray-500 mt-1 block">
               Name fetched directly from Telegram Mini App
             </small>

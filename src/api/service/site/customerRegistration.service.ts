@@ -31,11 +31,16 @@ export const deleteCustomer = async (id: number) => {
 
   return await data;
 };
-// Fetch customer by id
-export const getCustomer = async (id: string) => {
+// Fetch customer by phone
+export const getCustomer = async (phone_number: string) => {
   try {
-    console.log("[getCustomer] Fetching customer with ID:", id);
-    const response = await fetch(`${CUSTOMER_REGISTER_ENDPOINT}/${id}`);
+    console.log(
+      "[getCustomer] Fetching customer with phone number:",
+      phone_number
+    );
+    const response = await fetch(
+      `${CUSTOMER_REGISTER_ENDPOINT}/${phone_number}`
+    );
     console.log("[getCustomer] Response status:", response.status);
     if (!response.ok) {
       const errorText = await response.text();

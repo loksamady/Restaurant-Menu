@@ -43,11 +43,18 @@ interface Order {
   deliveryAddress?: string;
   specialInstructions?: string;
   customerInfo: {
+    id?: number | string;
     name: string;
     phone: string;
+    profile_picture?: string;
+    username?: string;
+    languageCode?: string;
+    isPremium?: boolean;
+    create_at?: string;
     email?: string;
     address?: string;
-    paymentMethod: string;
+    notes?: string;
+    paymentMethod?: string;
   };
   submittedToApi: boolean;
   estimatedDeliveryTime?: string;
@@ -340,6 +347,39 @@ const MyOrders: React.FC<MyOrdersProps> = ({ visible, onHide }) => {
 
             {/* Customer & Delivery Info */}
             <div className="mt-3 text-sm text-gray-600 space-y-1">
+              {order.customerInfo && (
+                <div className="flex items-center gap-3 mb-2">
+                  {order.customerInfo.profile_picture && (
+                    <img
+                      src={
+                        order.customerInfo.profile_picture.startsWith("http")
+                          ? order.customerInfo.profile_picture
+                          : `${IMAGE_URL}/${order.customerInfo.profile_picture}`
+                      }
+                      alt="Profile"
+                      className="w-8 h-8 rounded-full border"
+                    />
+                  )}
+                  <span className="font-semibold">
+                    {order.customerInfo.name}
+                  </span>
+                  {order.customerInfo.username && (
+                    <span className="text-xs text-gray-500 ml-2">
+                      @{order.customerInfo.username}
+                    </span>
+                  )}
+                  {order.customerInfo.phone && (
+                    <span className="text-xs text-gray-500 ml-2">
+                      {order.customerInfo.phone}
+                    </span>
+                  )}
+                  {order.customerInfo.languageCode && (
+                    <span className="text-xs text-gray-500 ml-2">
+                      {order.customerInfo.languageCode}
+                    </span>
+                  )}
+                </div>
+              )}
               {order.deliveryAddress && (
                 <div>
                   <strong>Delivery:</strong> {order.deliveryAddress}

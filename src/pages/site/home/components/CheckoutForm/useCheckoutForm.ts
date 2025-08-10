@@ -39,7 +39,10 @@ export default function useCheckoutForm() {
       WebApp.expand();
       const user = getTelegramUser(WebApp) || getMockTelegramUser();
       setTelegramUser(user);
-      setValue("username", user.first_name || user.first_name || "");
+      const fullName = [user.first_name, user.last_name]
+        .filter(Boolean)
+        .join(" ");
+      setValue("username", fullName || user.first_name || "");
       setValue("profile_picture", user.profile_picture || "");
       setValue("telegram_id", user.id?.toString() || "");
       setValue("telegram_username", user.username || "");
@@ -72,40 +75,89 @@ export default function useCheckoutForm() {
       setIsSubmittingOrder(false);
       return;
     }
-    let apiSuccess = false;
-    try {
-      const customerPayload = {
-        ...data,
-        telegram_id: telegramUser?.id?.toString() || data.telegram_id || "",
-        telegram_username:
-          telegramUser?.username || data.telegram_username || "",
-        profile_picture: telegramUser?.photo_url || data.profile_picture || "",
-      };
-      console.log("Sending customer data to API backend:", customerPayload);
-      await customerRegistrationMutation.mutateAsync(customerPayload);
-      apiSuccess = true;
-    } catch (e: any) {
-      if (e?.response?.status === 409) apiSuccess = true;
-    }
-    if (apiSuccess) {
-      // Only add order if not already present (by orderId)
-      const order = createOrderFromCart(cartMenus, {
+    // Check if there is already a customer profile in UserProfile
+    const orders = orderStore.getState().orders;
+    const latestOrder = orders.length > 0 ? orders[orders.length - 1] : null;
+    let customerInfo;
+    if (
+      latestOrder &&
+      latestOrder.customerInfo &&
+      latestOrder.customerInfo.phone
+    ) {
+      // If user changed phone or name, update profile for new order
+      if (
+        latestOrder.customerInfo.phone !== phone ||
+        latestOrder.customerInfo.name !== username
+      ) {
+        customerInfo = {
+          ...latestOrder.customerInfo,
+          name: username,
+          phone,
+          address: data.address,
+        };
+      } else {
+        customerInfo = latestOrder.customerInfo;
+      }
+    } else {
+      // Prevent duplicate phone number only for active orders
+      const activeStatuses = ["pending", "confirmed", "preparing", "ready"];
+      const duplicateActivePhone = orders.some(
+        (order) =>
+          order.customerInfo.phone === phone &&
+          activeStatuses.includes(order.status)
+      );
+      if (duplicateActivePhone) {
+        toast.error(
+          "This phone number already has an active order. Please wait until your previous order is completed or cancelled."
+        );
+        setIsSubmittingOrder(false);
+        return;
+      }
+      let apiSuccess = false;
+      try {
+        const customerPayload = {
+          ...data,
+          telegram_id: telegramUser?.id?.toString() || data.telegram_id || "",
+          telegram_username:
+            telegramUser?.username || data.telegram_username || "",
+          profile_picture:
+            telegramUser?.photo_url || data.profile_picture || "",
+        };
+        console.log("Sending customer data to API backend:", customerPayload);
+        await customerRegistrationMutation.mutateAsync(customerPayload);
+        apiSuccess = true;
+      } catch (e: any) {
+        if (e?.response?.status === 409) apiSuccess = true;
+      }
+      if (!apiSuccess) {
+        setIsSubmittingOrder(false);
+        return;
+      }
+      customerInfo = {
         name: username,
         phone,
         address: data.address,
-      });
-      // Check if order already exists in store
-      const existingOrder = orderStore
-        .getState()
-        .orders.find((o) => o.orderId === order.orderId);
-      if (!existingOrder) {
-        addOrder(order);
-        clearCart();
-        window.dispatchEvent(new Event("customer-updated"));
-        toast.success("Order submitted!");
-      } else {
-        toast.error("Order already submitted!");
-      }
+        profile_picture:
+          telegramUser?.profile_picture || data.profile_picture || "",
+        username: telegramUser?.username || data.username || "",
+        languageCode: telegramUser?.language_code || "en",
+        isPremium: false,
+        create_at: new Date().toISOString(),
+      };
+    }
+
+    // Only add order if not already present (by orderId)
+    const order = createOrderFromCart(cartMenus, customerInfo);
+    const existingOrder = orderStore
+      .getState()
+      .orders.find((o) => o.orderId === order.orderId);
+    if (!existingOrder) {
+      addOrder(order);
+      clearCart();
+      window.dispatchEvent(new Event("customer-updated"));
+      toast.success("Order submitted!");
+    } else {
+      toast.error("Order already submitted!");
     }
     setIsSubmittingOrder(false);
   };
