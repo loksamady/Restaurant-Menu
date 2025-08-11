@@ -15,15 +15,12 @@ import MyOrders from "./MyOrders";
 import { IMAGE_URL } from "@src/constant/env";
 import { orderStore } from "@src/state/order";
 import { CUSTOMER_REGISTER_ENDPOINT } from "@src/constant/site/constant";
-
 import axios from "axios";
 
-// Fetch customer info from backend
-async function getCustomer(phone: string) {
+// Fetch customer info from backend with id
+async function getCustomerById(id: number | string) {
   try {
-    const response = await axios.get(
-      `${CUSTOMER_REGISTER_ENDPOINT}?phone=${phone}`
-    );
+    const response = await axios.get(`${CUSTOMER_REGISTER_ENDPOINT}/${id}`);
     return response.data;
   } catch (error) {
     console.error("Failed to fetch customer info:", error);
@@ -65,46 +62,30 @@ const UserProfile: React.FC<UserProfileProps> = ({ visible, onHide }) => {
       if (orders.length > 0) {
         const latestOrder = orders[orders.length - 1];
         const localCustomer = latestOrder.customerInfo;
-        if (localCustomer && localCustomer.phone) {
-          // Fetch customer info from backend
-          const remoteCustomer = await getCustomer(localCustomer.phone);
-          if (remoteCustomer) {
-            setUser({
-              id: remoteCustomer.id ?? localCustomer.id ?? "guest",
-              name: remoteCustomer.name ?? localCustomer.name ?? "Customer",
-              phone: remoteCustomer.phone ?? localCustomer.phone ?? "",
-              profile_picture:
-                remoteCustomer.profile_picture ??
-                localCustomer.profile_picture ??
-                null,
-              username: remoteCustomer.username ?? localCustomer.username ?? "",
-              languageCode:
-                remoteCustomer.languageCode ??
-                localCustomer.languageCode ??
-                "en",
-              isPremium:
-                remoteCustomer.isPremium ?? localCustomer.isPremium ?? false,
-              create_at:
-                remoteCustomer.create_at ??
-                localCustomer.create_at ??
-                new Date().toISOString().split("T")[0],
-            });
-            return;
-          } else {
-            setUser({
-              id: localCustomer.id ?? "guest",
-              name: localCustomer.name ?? "Customer",
-              phone: localCustomer.phone ?? "",
-              profile_picture: localCustomer.profile_picture ?? null,
-              username: localCustomer.username ?? "",
-              languageCode: localCustomer.languageCode ?? "en",
-              isPremium: localCustomer.isPremium ?? false,
-              create_at:
-                localCustomer.create_at ??
-                new Date().toISOString().split("T")[0],
-            });
-            return;
-          }
+        if (localCustomer && localCustomer.id) {
+          // Fetch customer info from backend by id
+          const remoteCustomer = await getCustomerById(localCustomer.id);
+          setUser({
+            id: remoteCustomer?.id ?? localCustomer.id ?? "guest",
+            name: remoteCustomer?.name ?? localCustomer.name ?? "Customer",
+            phone: remoteCustomer?.phone ?? localCustomer.phone ?? "",
+            profile_picture:
+              remoteCustomer?.profile_picture ??
+              localCustomer.profile_picture ??
+              null,
+            username: remoteCustomer?.username ?? localCustomer.username ?? "",
+            languageCode:
+              remoteCustomer?.languageCode ??
+              localCustomer.languageCode ??
+              "en",
+            isPremium:
+              remoteCustomer?.isPremium ?? localCustomer.isPremium ?? false,
+            create_at:
+              remoteCustomer?.create_at ??
+              localCustomer.create_at ??
+              new Date().toISOString().split("T")[0],
+          });
+          return;
         }
       }
       setUser({

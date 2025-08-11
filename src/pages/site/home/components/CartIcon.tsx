@@ -45,8 +45,8 @@ const CartIcon: React.FC<CartIconProps> = ({
       return;
     }
 
-    // Show checkout form instead of immediately creating order
-    setShowCheckoutForm(true);
+    setVisible(false); // Hide cart dialog
+    setShowCheckoutForm(true); // Show checkout form
   };
 
   const handleCheckoutSubmit = async (
@@ -69,17 +69,20 @@ const CartIcon: React.FC<CartIconProps> = ({
         }`,
         paymentMethod: "cash" as const,
       });
-        // If customer profile exists, go directly to MyOrders
-        const orders = orderStore.getState().orders;
-        const latestOrder = orders.length > 0 ? orders[orders.length - 1] : null;
-        const hasCustomerProfile = latestOrder && latestOrder.customerInfo && latestOrder.customerInfo.phone;
-        if (hasCustomerProfile) {
-          setShowMyOrders(true);
-          setVisible(false);
-          return;
-        }
-        // Otherwise, show checkout form
-        setShowCheckoutForm(true);
+      // If customer profile exists, go directly to MyOrders
+      const orders = orderStore.getState().orders;
+      const latestOrder = orders.length > 0 ? orders[orders.length - 1] : null;
+      const hasCustomerProfile =
+        latestOrder &&
+        latestOrder.customerInfo &&
+        latestOrder.customerInfo.phone;
+      if (hasCustomerProfile) {
+        setShowMyOrders(true);
+        setVisible(false);
+        return;
+      }
+      // Otherwise, show checkout form
+      setShowCheckoutForm(true);
       addOrder(newOrder);
 
       // Clear the cart

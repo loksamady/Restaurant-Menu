@@ -11,8 +11,18 @@ import { orderStore } from "@src/state/order";
 import { userStore } from "@src/state/store";
 import { useMutation } from "@tanstack/react-query";
 
+interface TelegramUser {
+  id?: number | string;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+  profile_picture?: string;
+  photo_url?: string;
+  language_code?: string;
+}
+
 export default function useCheckoutForm() {
-  const [telegramUser, setTelegramUser] = useState<any>(null);
+  const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const cartMenus = userStore((state) => state.menus);
@@ -59,15 +69,17 @@ export default function useCheckoutForm() {
 
   let submitTimeout: NodeJS.Timeout | null = null;
   const handleFormSubmit = async (data: CreateCustomerSchemaType) => {
-    if (isSubmittingOrder) return; // Prevent double submit
+    if (isSubmittingOrder) return;
     setIsSubmittingOrder(true);
     if (submitTimeout) clearTimeout(submitTimeout);
-    submitTimeout = setTimeout(() => {}, 1000); // Debounce rapid clicks
+    submitTimeout = setTimeout(() => {}, 1000);
+
     if (cartMenus.length === 0) {
       toast.error("Your cart is empty!");
       setIsSubmittingOrder(false);
       return;
     }
+
     const username = data.username?.trim() || "Guest";
     const phone = data.phone_number?.trim();
     if (!username || !phone || phone.length < 5) {
@@ -75,16 +87,16 @@ export default function useCheckoutForm() {
       setIsSubmittingOrder(false);
       return;
     }
-    // Check if there is already a customer profile in UserProfile
+
     const orders = orderStore.getState().orders;
     const latestOrder = orders.length > 0 ? orders[orders.length - 1] : null;
     let customerInfo;
+
     if (
       latestOrder &&
       latestOrder.customerInfo &&
       latestOrder.customerInfo.phone
     ) {
-      // If user changed phone or name, update profile for new order
       if (
         latestOrder.customerInfo.phone !== phone ||
         latestOrder.customerInfo.name !== username
@@ -99,7 +111,6 @@ export default function useCheckoutForm() {
         customerInfo = latestOrder.customerInfo;
       }
     } else {
-      // Prevent duplicate phone number only for active orders
       const activeStatuses = ["pending", "confirmed", "preparing", "ready"];
       const duplicateActivePhone = orders.some(
         (order) =>
@@ -146,11 +157,11 @@ export default function useCheckoutForm() {
       };
     }
 
-    // Only add order if not already present (by orderId)
     const order = createOrderFromCart(cartMenus, customerInfo);
     const existingOrder = orderStore
       .getState()
       .orders.find((o) => o.orderId === order.orderId);
+
     if (!existingOrder) {
       addOrder(order);
       clearCart();

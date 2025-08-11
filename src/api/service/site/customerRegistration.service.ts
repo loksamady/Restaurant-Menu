@@ -3,9 +3,12 @@ import { post, remove } from "../../config";
 import { toastPromise } from "@src/util/toastUtil";
 // Public customer registration data type (customer data only)
 export type PublicCustomerRegistration = {
-  username: string;
-  phone_number: string; // Changed from 'phone' to match database schema
-  address: string;
+  id: number;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+  phone_number?: string; // Changed from 'phone' to match database schema
+  address?: string;
   telegram_id?: string;
   telegram_username?: string;
   profile_picture?: string;
@@ -31,16 +34,11 @@ export const deleteCustomer = async (id: number) => {
 
   return await data;
 };
-// Fetch customer by phone
-export const getCustomer = async (phone_number: string) => {
+// Fetch customer by id
+export const getCustomer = async (id: number) => {
   try {
-    console.log(
-      "[getCustomer] Fetching customer with phone number:",
-      phone_number
-    );
-    const response = await fetch(
-      `${CUSTOMER_REGISTER_ENDPOINT}/${phone_number}`
-    );
+    console.log("[getCustomer] Fetching customer with id:", id);
+    const response = await fetch(`${CUSTOMER_REGISTER_ENDPOINT}/${id}`);
     console.log("[getCustomer] Response status:", response.status);
     if (!response.ok) {
       const errorText = await response.text();
