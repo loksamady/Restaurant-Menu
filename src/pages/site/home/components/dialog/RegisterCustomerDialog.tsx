@@ -1,5 +1,5 @@
 import { Dialog } from "primereact/dialog";
-import RegisterForm from "@src/api/service/site/customerRegistration.service";
+import RegisterForm from "@src/pages/site/home/components/RegisterCustomer/RegisterForm";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CreateCustomerSchema,
