@@ -35,6 +35,7 @@ export const CustomerLoginSchema = z.object({
 
 // Update Customer Profile Schema
 export const CreateCustomerSchema = z.object({
+  id: z.number().optional(), // Optional for new customers
   username: z
     .string()
     .min(2, "Username must be at least 2 characters")

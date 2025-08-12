@@ -32,13 +32,18 @@ const RegisterCustomerDialog: React.FC<Props> = ({ visible, setVisible }) => {
 
   const { mutate, isPending } = useMutation({
     mutationFn: registerCustomer,
-    onSuccess: () => {
+    onSuccess: (response) => {
+      // response should contain the registered customer with id
+      if (response && response.id) {
+        console.log("Customer registered with ID:", response.id);
+      }
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       setVisible(false);
     },
   });
 
   const onSubmit = (data: CreateCustomerSchemaType) => {
+    // Only send the data required for registration, let backend generate id
     mutate(data);
   };
 
