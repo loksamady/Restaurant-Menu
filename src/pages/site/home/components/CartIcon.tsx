@@ -36,7 +36,7 @@ const CartIcon: React.FC<CartIconProps> = ({
           </span>
         )}
       </div>
-      <RegisterCustomerDialog isOpen={open} setIsOpen={setOpen} />
+      <RegisterCustomerDialog visible={open} setVisible={setOpen} />
     </>
   );
 };
