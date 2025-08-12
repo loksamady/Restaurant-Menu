@@ -3,7 +3,6 @@ import { post, remove } from "../../config";
 import { toastPromise } from "@src/util/toastUtil";
 // Public customer registration data type (customer data only)
 export type PublicCustomerRegistration = {
-  id: number;
   first_name?: string;
   last_name?: string;
   username?: string;
