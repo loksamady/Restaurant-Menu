@@ -4,13 +4,16 @@ import FormInput from "@src/components/Form/FormInput";
 import { CreateCustomerSchemaType } from "@src/validationType/customer";
 import { registerCustomer } from "@src/api/service/site/customerRegistration.service"; // import API
 
+import { PublicCustomerRegistration, CustomerRegistrationRequest } from "@src/api/service/site/customerRegistration.service";
+
 type Props = {
   form: UseFormReturn<CreateCustomerSchemaType>;
   isLoading: boolean;
   handleSubmit: (data: CreateCustomerSchemaType) => void;
+  onRegisterSuccess?: (customer: PublicCustomerRegistration) => void;
 };
 
-const RegisterForm = ({ form, isLoading, handleSubmit }: Props) => {
+const RegisterForm = ({ form, isLoading, handleSubmit, onRegisterSuccess }: Props) => {
   return (
     <form
       className="flex flex-col gap-4"
@@ -56,10 +59,22 @@ const RegisterForm = ({ form, isLoading, handleSubmit }: Props) => {
           onClick={async (e) => {
             e.preventDefault();
             const values = form.getValues();
-            console.log("Create button clicked, FormInput values:", values); // log values
+            // Use only registration request type (no id)
+            const customerData: CustomerRegistrationRequest = {
+              username: values.username,
+              phone_number: values.phone_number,
+              address: values.address,
+              telegram_id: values.telegram_id,
+              telegram_username: values.telegram_username,
+              profile_picture: ""
+            };
+            console.log("Create button clicked, FormInput values:", customerData); // log values
             try {
-              await registerCustomer(values); // call API
-              console.log("Customer registered to API:", values);
+              const response = await registerCustomer(customerData);
+              console.log("Customer registered to API:", response);
+              if (onRegisterSuccess) {
+                onRegisterSuccess(response);
+              }
             } catch (error) {
               console.error("API error:", error);
             }

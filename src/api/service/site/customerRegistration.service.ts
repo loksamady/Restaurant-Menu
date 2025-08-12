@@ -7,14 +7,17 @@ export type PublicCustomerRegistration = {
   first_name?: string;
   last_name?: string;
   username?: string;
-  phone_number?: string; // Changed from 'phone' to match database schema
+  phone_number?: string;
   address?: string;
   telegram_id?: string;
   telegram_username?: string;
   profile_picture?: string;
 };
+
+// Registration request type (no id)
+export type CustomerRegistrationRequest = Omit<PublicCustomerRegistration, 'id'>;
 export const registerCustomer = async (
-  registerCustomer: PublicCustomerRegistration
+  registerCustomer: CustomerRegistrationRequest
 ) => {
   const data = await post<PublicCustomerRegistration>(
     CUSTOMER_REGISTER_ENDPOINT,
