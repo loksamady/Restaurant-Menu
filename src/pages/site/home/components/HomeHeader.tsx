@@ -22,8 +22,8 @@ import { getTextColor } from "@src/util/themeColorUtil";
 import { IMAGE_URL } from "@src/constant/env";
 import CartIcon from "./CartIcon";
 import { userStore } from "@src/state/store";
-import UserProfile from "@src/components/user/UserProfile";
-import User from "@src/components/user/User";
+import UserProfile from "@src/pages/site/home/components/customer/UserProfile";
+import User from "@src/pages/site/home/components/customer/User";
 
 type Props = {
   value: string;

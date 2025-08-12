@@ -137,8 +137,16 @@ export default function useCheckoutForm() {
         console.log("Sending customer data to API backend:", customerPayload);
         await customerRegistrationMutation.mutateAsync(customerPayload);
         apiSuccess = true;
-      } catch (e: any) {
-        if (e?.response?.status === 409) apiSuccess = true;
+      } catch (e: unknown) {
+        if (
+          typeof e === "object" &&
+          e !== null &&
+          "response" in e &&
+          typeof (e as { response?: { status?: number } }).response === "object" &&
+          (e as { response?: { status?: number } }).response?.status === 409
+        ) {
+          apiSuccess = true;
+        }
       }
       if (!apiSuccess) {
         setIsSubmittingOrder(false);

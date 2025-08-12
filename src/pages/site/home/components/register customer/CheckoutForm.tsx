@@ -1,4 +1,3 @@
-// ...existing code...
 import React, { useState } from "react";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
@@ -6,10 +5,20 @@ import { InputTextarea } from "primereact/inputtextarea";
 import { Dialog } from "primereact/dialog";
 import { toast } from "sonner";
 import useCheckoutForm from "./useCheckoutForm";
-import UserProfile from "@src/components/user/UserProfile";
+import UserProfile from "@src/pages/site/home/components/customer/UserProfile";
 import { userStore } from "@src/state/store";
 
-const CheckoutForm: React.FC = ({ onHide }: { onHide?: () => void }) => {
+interface CheckoutFormProps {
+  onHide?: () => void;
+  onSubmit: (data: any) => void;
+  isSubmitting: boolean;
+}
+
+const CheckoutForm: React.FC<CheckoutFormProps> = ({
+  onHide,
+  onSubmit,
+  isSubmitting,
+}) => {
   const [showDialog, setShowDialog] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const {
@@ -25,7 +34,7 @@ const CheckoutForm: React.FC = ({ onHide }: { onHide?: () => void }) => {
   const clearCart = userStore((state) => state.clearCart);
 
   // Hide Checkout dialog when submit is clicked
-  const onSubmit = async (data: any) => {
+  const handleLocalSubmit = async (data: any) => {
     await handleFormSubmit(data);
     if (onHide) onHide();
     // Clear items in cart shopping after submit
@@ -39,6 +48,8 @@ const CheckoutForm: React.FC = ({ onHide }: { onHide?: () => void }) => {
       setShowDialog(false);
       setShowUserProfile(true); // Show UserProfile dialog
     }
+    // Call parent onSubmit if provided
+    if (onSubmit) onSubmit(data);
   };
 
   return (
@@ -61,7 +72,7 @@ const CheckoutForm: React.FC = ({ onHide }: { onHide?: () => void }) => {
       <h3 className="text-xl font-semibold mb-6 text-gray-800">
         Complete Your Order
       </h3>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(handleLocalSubmit)} className="space-y-4">
         {customerRegistrationMutation.isSuccess && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
             <p className="text-green-800 text-sm">
@@ -204,16 +215,16 @@ const CheckoutForm: React.FC = ({ onHide }: { onHide?: () => void }) => {
         <Button
           type="submit"
           label={
-            isSubmittingOrder
+            isSubmitting
               ? customerRegistrationMutation.isPending
                 ? "Creating Profile..."
                 : "Processing Order..."
               : "Submit Order"
           }
-          icon={isSubmittingOrder ? "pi pi-spin pi-spinner" : "pi pi-check"}
+          icon={isSubmitting ? "pi pi-spin pi-spinner" : "pi pi-check"}
           className="w-full"
           disabled={false}
-          loading={isSubmittingOrder || customerRegistrationMutation.isPending}
+          loading={isSubmitting || customerRegistrationMutation.isPending}
         />
       </form>
     </div>
